@@ -23,3 +23,9 @@ prisma/*.db-journal
 # misc
 .DS_Store
 *.tsbuildinfo
+.turbo
+coverage
+.vercel
+
+# editor
+.idea

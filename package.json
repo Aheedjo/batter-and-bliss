@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "lucide-react": "^1.11.0",
     "next": "^16.2.4",
     "prisma": "^6.19.3",
     "react": "^19.0.0",
@@ -27,7 +29,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

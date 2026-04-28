@@ -1,22 +1,22 @@
 "use client";
 
 import { useTransition } from "react";
+import { formatPrice } from "@/lib/order/money";
+import { labelForToppingCategory } from "@/lib/order/menu-categories";
 
 type Props = {
   id: string;
   name: string;
   price: number | null;
   available: boolean;
+  category?: string;
   onEdit: () => void;
   onToggleAvailable: (id: string, available: boolean) => Promise<void>;
 };
 
-function formatPrice(price: number | null) {
+function displayPrice(price: number | null) {
   if (price === null) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
+  return formatPrice(price);
 }
 
 export function MenuItemRow({
@@ -24,6 +24,7 @@ export function MenuItemRow({
   name,
   price,
   available,
+  category,
   onEdit,
   onToggleAvailable,
 }: Props) {
@@ -39,12 +40,17 @@ export function MenuItemRow({
         <p className="truncate font-medium text-stone-800 dark:text-stone-100">
           {name}
         </p>
+        {category ? (
+          <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+            {labelForToppingCategory(category)}
+          </p>
+        ) : null}
         <p className="text-xs text-stone-500 dark:text-stone-400 sm:hidden">
-          {formatPrice(price)}
+          {displayPrice(price)}
         </p>
       </div>
       <p className="hidden text-right text-sm tabular-nums text-stone-600 dark:text-stone-300 sm:block">
-        {formatPrice(price)}
+        {displayPrice(price)}
       </p>
       <div className="flex justify-end">
         <button

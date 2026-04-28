@@ -10,6 +10,7 @@ type Item = {
   name: string;
   price: number | null;
   available: boolean;
+  category?: string;
 };
 
 type Props = {
@@ -42,9 +43,20 @@ export function MenuSection({
     mode: "create" | "edit";
     item: Item | null;
   }>({ open: false, mode: "create", item: null });
+  const [dialogNonce, setDialogNonce] = useState(0);
 
   const action =
     editor.mode === "create" ? createAction : updateAction;
+
+  const openCreate = () => {
+    setDialogNonce((n) => n + 1);
+    setEditor({ open: true, mode: "create", item: null });
+  };
+
+  const openEdit = (row: Item) => {
+    setDialogNonce((n) => n + 1);
+    setEditor({ open: true, mode: "edit", item: row });
+  };
 
   return (
     <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-6 shadow-[var(--ui-shadow)]">
@@ -59,12 +71,10 @@ export function MenuSection({
         </div>
         <button
           type="button"
-          onClick={() =>
-            setEditor({ open: true, mode: "create", item: null })
-          }
+          onClick={openCreate}
           className="inline-flex shrink-0 items-center justify-center rounded-xl bg-stone-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-stone-700"
         >
-          Add {kind === "topping" ? "topping" : "extra"}
+          Add {kind === "topping" ? "item" : "extra"}
         </button>
       </div>
 
@@ -81,9 +91,8 @@ export function MenuSection({
               name={row.name}
               price={row.price}
               available={row.available}
-              onEdit={() =>
-                setEditor({ open: true, mode: "edit", item: row })
-              }
+              category={kind === "topping" ? row.category : undefined}
+              onEdit={() => openEdit(row)}
               onToggleAvailable={setAvailable}
             />
           ))
@@ -91,7 +100,7 @@ export function MenuSection({
       </div>
 
       <ItemEditorDialog
-        key={`${editor.mode}-${editor.item?.id ?? "new"}`}
+        key={`${kind}-${editor.mode}-${editor.item?.id ?? "new"}-${dialogNonce}`}
         kind={kind}
         open={editor.open}
         mode={editor.mode}

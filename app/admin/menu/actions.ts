@@ -2,11 +2,19 @@
 
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { cuidSchema } from "@/lib/validations/ids";
 import { menuItemFormSchema } from "@/lib/validations/menu";
 
 const path = "/admin/menu";
+
+const toppingCategorySchema = z.enum([
+  "glazing",
+  "topping",
+  "syrup",
+  "drink",
+]);
 
 export type ActionState = { ok: true } | { ok: false; message: string };
 
@@ -19,6 +27,12 @@ function isNotFound(error: unknown) {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2025"
   );
+}
+
+function parseToppingCategory(formData: FormData) {
+  const raw = formData.get("category")?.toString() ?? "";
+  const p = toppingCategorySchema.safeParse(raw);
+  return p.success ? p.data : "topping";
 }
 
 export async function createTopping(
@@ -34,11 +48,13 @@ export async function createTopping(
       parsed.error.issues[0]?.message ?? "Please check the form";
     return fail(first);
   }
+  const category = parseToppingCategory(formData);
   try {
     await prisma.topping.create({
       data: {
         name: parsed.data.name,
         price: parsed.data.price,
+        category,
         available: true,
       },
     });
@@ -67,10 +83,15 @@ export async function updateTopping(
       parsed.error.issues[0]?.message ?? "Please check the form";
     return fail(first);
   }
+  const category = parseToppingCategory(formData);
   try {
     await prisma.topping.update({
       where: { id: idParsed.data },
-      data: { name: parsed.data.name, price: parsed.data.price },
+      data: {
+        name: parsed.data.name,
+        price: parsed.data.price,
+        category,
+      },
     });
   } catch (e) {
     if (isNotFound(e)) return fail("Item not found.");

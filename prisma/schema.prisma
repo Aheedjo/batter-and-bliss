@@ -12,6 +12,8 @@ datasource db {
 model Topping {
   id        String   @id @default(cuid())
   name      String
+  /// glazing | topping | syrup | drink — matches in-store menu sections
+  category  String   @default("topping")
   price     Float?
   available Boolean  @default(true)
   createdAt DateTime @default(now())

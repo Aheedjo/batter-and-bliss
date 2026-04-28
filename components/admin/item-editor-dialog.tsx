@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { ActionState } from "@/app/admin/menu/actions";
+import {
+  TOPPING_CATEGORIES,
+  labelForToppingCategory,
+} from "@/lib/order/menu-categories";
 
 export type MenuKind = "topping" | "extra";
 
@@ -10,6 +14,7 @@ type Item = {
   name: string;
   price: number | null;
   available: boolean;
+  category?: string;
 };
 
 type Props = {
@@ -42,7 +47,6 @@ export function ItemEditorDialog({
     if (!el) return;
     if (open) {
       el.showModal();
-      setError(null);
     } else {
       el.close();
     }
@@ -62,10 +66,10 @@ export function ItemEditorDialog({
   const title =
     mode === "create"
       ? kind === "topping"
-        ? "New topping"
+        ? "New menu add-on"
         : "New extra"
       : kind === "topping"
-        ? "Edit topping"
+        ? "Edit menu add-on"
         : "Edit extra";
 
   return (
@@ -121,10 +125,34 @@ export function ItemEditorDialog({
             maxLength={120}
             defaultValue={item?.name ?? ""}
             className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-sm outline-none ring-stone-300 transition placeholder:text-stone-400 focus:ring-2 dark:ring-stone-600"
-            placeholder="e.g. Sprinkles"
+            placeholder="e.g. Nutella drizzle"
             autoComplete="off"
           />
         </div>
+
+        {kind === "topping" ? (
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor={`${kind}-category`}
+              className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400"
+            >
+              Menu section
+            </label>
+            <select
+              id={`${kind}-category`}
+              name="category"
+              required
+              defaultValue={item?.category ?? "topping"}
+              className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-sm outline-none ring-stone-300 transition focus:ring-2 dark:ring-stone-600"
+            >
+              {TOPPING_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {labelForToppingCategory(c)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-1.5">
           <label
@@ -136,7 +164,7 @@ export function ItemEditorDialog({
           <input
             id={`${kind}-price`}
             name="price"
-            inputMode="decimal"
+            inputMode="numeric"
             defaultValue={
               item?.price != null ? String(item.price) : ""
             }
