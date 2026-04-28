@@ -19,7 +19,7 @@ function newOrderReference() {
 }
 
 const inputClass =
-  "mt-1.5 w-full rounded-2xl border border-order-line/90 bg-order-bg px-4 py-3 font-sans text-[14px] text-order-brownInk placeholder:text-order-muted/50 focus:border-order-brownBtn/40 focus:outline-none focus:ring-1 focus:ring-order-brownBtn/25";
+  "mt-1.5 w-full rounded-2xl border border-order-line/90 bg-order-bg px-4 py-3 font-sans text-base text-order-brownInk placeholder:text-order-muted/50 focus:border-order-brownBtn/40 focus:outline-none focus:ring-1 focus:ring-order-brownBtn/25";
 
 const btnPrimary =
   "flex w-full items-center justify-center gap-2 rounded-full bg-order-brownBtn py-[1.05rem] font-serif text-[15px] font-semibold tracking-[0.01em] text-white shadow-order-btn ring-1 ring-order-brownBtn/20 transition hover:brightness-110 active:scale-[0.99]";
@@ -52,7 +52,7 @@ function Subheading({
 }
 
 const textareaClass =
-  "mt-1.5 w-full resize-y rounded-2xl border border-order-line/90 bg-order-bg px-4 py-3 font-sans text-[14px] leading-relaxed text-order-brownInk placeholder:text-order-muted/50 focus:border-order-brownBtn/40 focus:outline-none focus:ring-1 focus:ring-order-brownBtn/25 min-h-[5.5rem]";
+  "mt-1.5 w-full resize-y rounded-2xl border border-order-line/90 bg-order-bg px-4 py-3 font-sans text-base leading-relaxed text-order-brownInk placeholder:text-order-muted/50 focus:border-order-brownBtn/40 focus:outline-none focus:ring-1 focus:ring-order-brownBtn/25 min-h-[5.5rem]";
 
 export function CheckoutClient({ toppings }: Props) {
   const router = useRouter();

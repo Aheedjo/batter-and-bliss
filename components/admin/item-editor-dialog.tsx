@@ -124,7 +124,7 @@ export function ItemEditorDialog({
             required
             maxLength={120}
             defaultValue={item?.name ?? ""}
-            className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-sm outline-none ring-stone-300 transition placeholder:text-stone-400 focus:ring-2 dark:ring-stone-600"
+            className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-base outline-none ring-stone-300 transition placeholder:text-stone-400 focus:ring-2 dark:ring-stone-600"
             placeholder="e.g. Nutella drizzle"
             autoComplete="off"
           />
@@ -143,7 +143,7 @@ export function ItemEditorDialog({
               name="category"
               required
               defaultValue={item?.category ?? "topping"}
-              className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-sm outline-none ring-stone-300 transition focus:ring-2 dark:ring-stone-600"
+              className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-base outline-none ring-stone-300 transition focus:ring-2 dark:ring-stone-600"
             >
               {TOPPING_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -168,7 +168,7 @@ export function ItemEditorDialog({
             defaultValue={
               item?.price != null ? String(item.price) : ""
             }
-            className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-sm outline-none ring-stone-300 transition placeholder:text-stone-400 focus:ring-2 dark:ring-stone-600"
+            className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-elevated)] px-3 py-2.5 text-base outline-none ring-stone-300 transition placeholder:text-stone-400 focus:ring-2 dark:ring-stone-600"
             placeholder="Leave empty if included"
           />
         </div>

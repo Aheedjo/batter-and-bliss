@@ -44,7 +44,7 @@ export function NoteClient() {
             maxLength={200}
             rows={4}
             placeholder="Happy Birthday Aisha 🎉"
-            className="w-full resize-none rounded-[1.5rem] bg-transparent px-4 py-3.5 font-serif text-[15px] italic leading-relaxed text-order-brownInk placeholder:text-order-muted/55 focus:outline-none focus:ring-0"
+            className="w-full resize-none rounded-[1.5rem] bg-transparent px-4 py-3.5 font-serif text-base italic leading-relaxed text-order-brownInk placeholder:text-order-muted/55 focus:outline-none focus:ring-0"
           />
           <div className="mx-2 border-t border-order-line/80" />
           <div className="flex items-center justify-between px-3 py-2.5">

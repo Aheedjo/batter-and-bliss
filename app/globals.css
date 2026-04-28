@@ -35,6 +35,23 @@
   .font-serif {
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   }
+
+  /*
+   * iOS Safari zooms the viewport when focusing inputs with computed font-size
+   * under ~16px. Keep typographic fields at 1rem unless a utility overrides.
+   */
+  textarea,
+  select,
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="password"],
+  input[type="number"] {
+    font-size: 1rem;
+  }
 }
 
 body {
