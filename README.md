@@ -95,4 +95,12 @@ npm run build
 
 ## Deploy
 
-Deploy like any Next.js app (e.g. [Vercel](https://vercel.com/docs/frameworks/nextjs)). Set production `DATABASE_URL` (or migrate to a hosted database and update Prisma), bank `NEXT_PUBLIC_*` values, and admin Basic Auth if the admin UI is exposed.
+Deploy like any Next.js app (e.g. [Vercel](https://vercel.com/docs/frameworks/nextjs)). Set bank `NEXT_PUBLIC_*` values and admin Basic Auth if the admin UI is exposed.
+
+### Database on Vercel (and other serverless hosts)
+
+The repo’s default **SQLite** file (`prisma/*.db`) is **not** committed (see `.gitignore`), and serverless runtimes are a poor fit for a local file database. If `DATABASE_URL` is missing or points at a non-existent file, Prisma would throw on routes that load the menu (e.g. `/order/customize`).
+
+**Customer order pages** use `lib/data/toppings-public.ts`: on any database error they **fall back** to the baked-in catalog in `lib/data/default-menu.json`, so the storefront keeps working even without a live DB.
+
+**Admin** (`/admin/*`) still needs a working `DATABASE_URL`. For production, point Prisma at a hosted database ([Prisma Postgres](https://www.prisma.io/docs/postgres), [Turso](https://docs.turso.tech/), [Neon](https://neon.tech/), etc.), run migrations and seed there, and set `DATABASE_URL` in the host’s environment.

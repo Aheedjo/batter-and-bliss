@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminNav } from "@/components/admin/admin-nav";
 
 export default function AdminLayout({
   children,
@@ -25,6 +26,7 @@ export default function AdminLayout({
           </Link>
         </div>
       </header>
+      <AdminNav />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         {children}
       </div>

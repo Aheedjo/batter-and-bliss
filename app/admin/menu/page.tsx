@@ -1,8 +1,6 @@
 import { MenuSection } from "@/components/admin/menu-section";
 import { compareToppingCategory } from "@/lib/order/menu-categories";
 import { prisma } from "@/lib/db";
-
-export const dynamic = "force-dynamic";
 import {
   createExtra,
   createTopping,
@@ -11,6 +9,8 @@ import {
   updateExtra,
   updateTopping,
 } from "./actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminMenuPage() {
   const [toppingsRaw, extras] = await Promise.all([
