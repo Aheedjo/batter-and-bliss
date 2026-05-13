@@ -1,6 +1,8 @@
 export const TOPPING_CATEGORIES = [
   "glazing",
+  "platter_glazing",
   "topping",
+  "platter_topping",
   "syrup",
   "drink",
 ] as const;
@@ -23,8 +25,12 @@ export function labelForToppingCategory(c: string): string {
   switch (c) {
     case "glazing":
       return "Glazing";
+    case "platter_glazing":
+      return "Platter glazing";
     case "topping":
       return "Topping";
+    case "platter_topping":
+      return "Platter topping";
     case "syrup":
       return "Syrup";
     case "drink":

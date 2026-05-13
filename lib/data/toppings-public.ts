@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { compareToppingCategory } from "@/lib/order/menu-categories";
 import type { ToppingCategory } from "@/lib/order/menu-categories";
 import { prisma } from "@/lib/db";
@@ -30,7 +31,7 @@ async function withToppingFallback(
   }
 }
 
-export async function getAvailableToppings(): Promise<PublicTopping[]> {
+export const getAvailableToppings = cache(async function getAvailableToppings(): Promise<PublicTopping[]> {
   return withToppingFallback(
     async () => {
       const rows = await prisma.topping.findMany({
@@ -46,9 +47,10 @@ export async function getAvailableToppings(): Promise<PublicTopping[]> {
     },
     getFallbackToppings,
   );
-}
+});
 
-export async function getAvailableToppingsByCategory(
+export const getAvailableToppingsByCategory = cache(
+  async function getAvailableToppingsByCategory(
   category: ToppingCategory,
 ): Promise<PublicTopping[]> {
   return withToppingFallback(
@@ -60,4 +62,4 @@ export async function getAvailableToppingsByCategory(
       }),
     () => getFallbackToppingsByCategory(category),
   );
-}
+});

@@ -1,8 +1,8 @@
 import { RANDOM_BLISS_FEE } from "@/lib/order/constants";
 import type { PancakeLine } from "@/lib/order/pancake-types";
-import { getStackById } from "@/lib/order/stacks";
 
 export type PricedCatalogItem = { id: string; name: string; price: number | null };
+export type PricedStackItem = { id: string; name: string; price: number };
 
 /** Structured rows for checkout / receipts; flat `lines` stays for stored customization text. */
 export type CartSummaryLine =
@@ -12,15 +12,17 @@ export type CartSummaryLine =
 export function computeCartTotal(
   pancakeLines: PancakeLine[],
   drinkQuantities: Record<string, number>,
+  stacks: PricedStackItem[],
   catalog: PricedCatalogItem[],
 ) {
+  const stackById = new Map(stacks.map((s) => [s.id, s]));
   const byId = new Map(catalog.map((t) => [t.id, t]));
   let total = 0;
   const lines: string[] = [];
   const summaryLines: CartSummaryLine[] = [];
 
   for (const line of pancakeLines) {
-    const stack = getStackById(line.stackId);
+    const stack = stackById.get(line.stackId);
     if (!stack) continue;
     let lineTotal = stack.price;
     const bits: string[] = [];

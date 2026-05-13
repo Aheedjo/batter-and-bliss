@@ -3,13 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { getCustomerOrderStatuses } from "@/app/order/status/actions";
 import { SectionHeading } from "@/components/brand/section-heading";
 import { CartSummaryLineRow } from "@/components/order/cart-summary-line-row";
 import { OrderPaymentFollowUp } from "@/components/order/order-payment-follow-up";
+import { StickyAction } from "@/components/order/sticky-action";
+import { reportTransferSent } from "@/app/order/checkout/actions";
+import type { PublicStack } from "@/lib/data/stacks-public";
 import { isActiveOrderVisibleToCustomer } from "@/lib/order/active-order";
 import { formatPrice } from "@/lib/order/money";
-import { getStackById } from "@/lib/order/stacks";
 import type { TrackedOrder } from "@/lib/order/tracked-order";
 import { useOrderStore } from "@/lib/stores/order-store";
 
@@ -37,6 +40,13 @@ function StatusBadge({ order }: { order: TrackedOrder }) {
       </span>
     );
   }
+  if (order.status === "confirmed") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-sans text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-100 dark:ring-emerald-800/60">
+        <span aria-hidden>✓</span> Confirmed
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-order-red-bg px-3 py-1 font-sans text-xs font-semibold text-order-red-text">
       <span aria-hidden>✕</span> Rejected
@@ -45,6 +55,24 @@ function StatusBadge({ order }: { order: TrackedOrder }) {
 }
 
 function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
+  if (order.status === "confirmed") {
+    return (
+      <div className="mt-5 rounded-2xl bg-emerald-50/90 px-4 py-3 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:ring-emerald-800/50">
+        <p className="font-sans text-sm font-medium text-emerald-950 dark:text-emerald-100">
+          You&apos;re confirmed — we&apos;re preparing and dispatching your order.
+        </p>
+        {order.etaLabel ? (
+          <p className="mt-2 font-serif text-base font-semibold text-emerald-950 dark:text-emerald-50">
+            {order.etaLabel}
+          </p>
+        ) : null}
+        <p className="mt-2 font-sans text-[12px] leading-snug text-emerald-800/90 dark:text-emerald-200/85">
+          Typical delivery is 60–120 mins from payment confirmation, based on
+          prep queue and rider availability.
+        </p>
+      </div>
+    );
+  }
   if (order.status === "pending" && order.etaLabel) {
     return (
       <div className="mt-5 rounded-2xl bg-order-bg px-4 py-3 ring-1 ring-black/[0.03]">
@@ -58,6 +86,10 @@ function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
             </p>
             <p className="mt-0.5 font-serif text-base font-semibold text-order-brown">
               {order.etaLabel}
+            </p>
+            <p className="mt-1 font-sans text-[11px] leading-snug text-order-taupe">
+              We confirm payment first, then prep and book your rider. Typical
+              delivery is 60–120 mins from confirmation.
             </p>
           </div>
         </div>
@@ -89,6 +121,7 @@ function OrderRow({
   onSelect: () => void;
 }) {
   const isPending = order.status === "pending";
+  const isConfirmed = order.status === "confirmed";
   return (
     <button
       type="button"
@@ -110,6 +143,10 @@ function OrderRow({
                 ●
               </span>
               Pending
+            </span>
+          ) : isConfirmed ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wide text-emerald-900 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-100 dark:ring-emerald-800/60">
+              <span aria-hidden>✓</span> Confirmed
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-order-red-bg px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wide text-order-red-text">
@@ -133,12 +170,16 @@ function OrderRow({
 
 function ActiveOrderReceipt({
   order,
+  stackById,
   className = "mt-8",
+  showInlinePaymentAction = true,
 }: {
   order: TrackedOrder;
+  stackById: Map<string, PublicStack>;
   className?: string;
+  showInlinePaymentAction?: boolean;
 }) {
-  const stackImage = getStackById(order.stackId);
+  const stackImage = stackById.get(order.stackId);
 
   return (
     <section
@@ -254,19 +295,31 @@ function ActiveOrderReceipt({
         </div>
       </div>
 
-      <OrderPaymentFollowUp order={order} />
+      <div id={`payment-${order.reference}`}>
+        <OrderPaymentFollowUp
+          order={order}
+          showActionButton={showInlinePaymentAction}
+        />
+      </div>
     </section>
   );
 }
 
-export function StatusClient() {
+export function StatusClient({ stacks }: { stacks: PublicStack[] }) {
   const searchParams = useSearchParams();
   const activeOrders = useOrderStore((s) => s.activeOrders);
   const trackSelectedRef = useOrderStore((s) => s.trackSelectedRef);
   const setTrackSelectedRef = useOrderStore((s) => s.setTrackSelectedRef);
   const pruneStaleActiveOrders = useOrderStore((s) => s.pruneStaleActiveOrders);
+  const markTransferSent = useOrderStore((s) => s.markTransferSent);
+  const mergeActiveOrderServerState = useOrderStore(
+    (s) => s.mergeActiveOrderServerState,
+  );
+  const [stickyError, setStickyError] = useState<string | null>(null);
+  const [stickyPending, startStickyReport] = useTransition();
 
   const refFromUrl = searchParams.get("ref");
+  const focusParam = searchParams.get("focus");
 
   useEffect(() => {
     pruneStaleActiveOrders();
@@ -287,6 +340,10 @@ export function StatusClient() {
     () => activeOrders.filter(isActiveOrderVisibleToCustomer),
     [activeOrders],
   );
+  const visibleRefsKey = useMemo(
+    () => visibleOrders.map((o) => o.reference).sort().join("|"),
+    [visibleOrders],
+  );
 
   const selected = useMemo(() => {
     if (!visibleOrders.length) return null;
@@ -297,9 +354,52 @@ export function StatusClient() {
   }, [visibleOrders, trackSelectedRef]);
 
   const multiple = visibleOrders.length > 1;
+  const stackById = useMemo(() => new Map(stacks.map((s) => [s.id, s])), [stacks]);
+  const showStickyPaymentAction = Boolean(
+    selected &&
+      selected.status === "pending" &&
+      !selected.transferReportedAt,
+  );
+
+  useEffect(() => {
+    if (!selected || focusParam !== "payment") return;
+    const id = `payment-${selected.reference}`;
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 180);
+    return () => window.clearTimeout(t);
+  }, [focusParam, selected]);
+
+  useEffect(() => {
+    const refs = visibleRefsKey ? visibleRefsKey.split("|") : [];
+    if (refs.length === 0) return;
+    let cancelled = false;
+
+    async function syncOnce() {
+      try {
+        const rows = await getCustomerOrderStatuses(refs);
+        if (!cancelled) mergeActiveOrderServerState(rows);
+      } catch {
+        // keep local snapshot if sync fails
+      }
+    }
+
+    void syncOnce();
+    const iv = window.setInterval(() => {
+      void syncOnce();
+    }, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(iv);
+    };
+  }, [visibleRefsKey, mergeActiveOrderServerState]);
 
   return (
-    <div className="mx-auto max-w-lg px-5 pb-16 pt-6 sm:px-6">
+    <div
+      className={`mx-auto max-w-lg px-5 pt-6 sm:px-6 ${showStickyPaymentAction ? "pb-24" : "pb-16"}`}
+    >
       <header className="flex items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Track"
@@ -368,7 +468,9 @@ export function StatusClient() {
               ) : null}
               <ActiveOrderReceipt
                 order={selected}
+                stackById={stackById}
                 className={multiple ? "mt-3" : "mt-8"}
+                showInlinePaymentAction={!showStickyPaymentAction}
               />
             </>
           ) : null}
@@ -377,10 +479,40 @@ export function StatusClient() {
 
       <Link
         href="/order/stack"
-        className="mt-10 block text-center font-sans text-sm font-semibold text-order-brownInk underline-offset-4 hover:underline"
+        className={`block text-center font-sans text-sm font-semibold text-order-brownInk underline-offset-4 hover:underline ${showStickyPaymentAction ? "mt-28" : "mt-10"}`}
       >
         Start a new order
       </Link>
+
+      {showStickyPaymentAction && selected ? (
+        <StickyAction>
+          <>
+            {stickyError ? (
+              <p className="mb-2 rounded-xl border border-red-200/80 bg-red-50 px-3 py-2 text-center font-sans text-[12px] leading-snug text-red-800 dark:border-red-800/70 dark:bg-red-950/50 dark:text-red-100">
+                {stickyError}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setStickyError(null);
+                startStickyReport(async () => {
+                  const res = await reportTransferSent(selected.reference);
+                  if (!res.ok) {
+                    setStickyError(res.message);
+                    return;
+                  }
+                  markTransferSent(selected.reference);
+                });
+              }}
+              disabled={stickyPending}
+              className={`w-full rounded-full bg-order-brownBtn py-[1.05rem] font-serif text-[15px] font-semibold tracking-[0.01em] text-white shadow-order-btn ring-1 ring-order-brownBtn/20 transition hover:brightness-110 active:scale-[0.99] ${stickyPending ? "pointer-events-none opacity-60" : ""}`}
+            >
+              {stickyPending ? "Saving…" : "I've sent the transfer"}
+            </button>
+          </>
+        </StickyAction>
+      ) : null}
     </div>
   );
 }

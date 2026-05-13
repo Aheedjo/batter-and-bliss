@@ -50,7 +50,7 @@ export const STACKS = [
   },
 ] as const;
 
-export type StackId = (typeof STACKS)[number]["id"];
+export type StackId = string;
 
 export function getStackById(id: StackId | null) {
   if (!id) return null;

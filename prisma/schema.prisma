@@ -3,28 +3,78 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// SQLite database file path is relative to the prisma/ folder (e.g. prisma/dev.db).
+// Use a Postgres URL (e.g. Neon): postgresql://USER:PASSWORD@HOST/DB?sslmode=require
 
 model Topping {
-  id        String   @id @default(cuid())
-  name      String
-  /// glazing | topping | syrup | drink — matches in-store menu sections
-  category  String   @default("topping")
-  price     Float?
-  available Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  /// glazing | platter_glazing | topping | platter_topping | syrup | drink
+  category    String   @default("topping")
+  price       Float?
+  description String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Extra {
-  id        String   @id @default(cuid())
-  name      String
-  price     Float?
-  available Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  price       Float?
+  description String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Stack {
+  id          String   @id @default(cuid())
+  name        String
+  /// pancake | platter
+  kind        String   @default("pancake")
+  price       Float?
+  description String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ShopSetting {
+  id            String   @id @default("default")
+  /// Max “I’ve sent the transfer” slots per shop 6am–6am day (WAT). Null = no limit.
+  dailyOrderCap Int?
+  /// When false, checkout is blocked (manual pause).
+  orderIntakeEnabled Boolean @default(true)
+  /// When false, weekday + window rules are skipped (24/7 intake if enabled above).
+  orderIntakeScheduleEnabled Boolean @default(true)
+  /// JSON array of JS weekdays 0–6 (Sun–Sat) that are kitchen / fulfilment days—no new orders that shop calendar day.
+  serviceWeekdaysJson String @default("[3]")
+  updatedAt     DateTime @updatedAt
+}
+
+/// Customer checkout snapshot for admin / kitchen (status: pending | confirmed | rejected).
+model Order {
+  id                     String   @id @default(cuid())
+  reference              String   @unique
+  status                 String   @default("pending")
+  placedAt               DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  placedByName           String
+  buyerPhone             String
+  expectedBankSenderName String
+  email                  String?
+  deliveryAddress        String
+  stackId                String
+  stackName              String
+  customization          String
+  note                   String
+  total                  Float
+  etaLabel               String?
+  rejectionReason        String?
+  transferReportedAt     String?
+  summaryLines           Json?
 }

@@ -20,6 +20,8 @@ type FloatPieceProps = {
   anim: Anim;
   /** Negative stagger in seconds (can be fractional). */
   delayS?: number;
+  /** First paint / LCP: set on one above-the-fold decoration. */
+  priority?: boolean;
 };
 
 function FloatPiece({
@@ -29,6 +31,7 @@ function FloatPiece({
   className,
   anim,
   delayS = 0,
+  priority = false,
 }: FloatPieceProps) {
   const style: CSSProperties | undefined =
     delayS !== 0 ? { animationDelay: `-${delayS}s` } : undefined;
@@ -42,6 +45,7 @@ function FloatPiece({
         height={height}
         className="h-auto w-full object-contain"
         sizes="(max-width: 640px) 112px, 160px"
+        priority={priority}
       />
     </div>
   );
@@ -64,6 +68,7 @@ export function FloatingBrandDecor({ variant = "marketing" }: { variant?: Varian
           height={577}
           anim="animate-float-drift-medium"
           delayS={1.4}
+          priority
           className="absolute left-[max(0.25rem,env(safe-area-inset-left))] top-[11%] w-[4.75rem] opacity-[0.32] sm:left-3 sm:top-[13%] sm:w-[6.25rem] sm:opacity-[0.36]"
         />
         <FloatPiece
@@ -105,6 +110,7 @@ export function FloatingBrandDecor({ variant = "marketing" }: { variant?: Varian
         height={577}
         anim="animate-float-drift"
         delayS={0.6}
+        priority
         className="absolute -right-4 top-24 w-[5.25rem] opacity-[0.28] sm:right-0 sm:top-28 sm:w-[7.5rem] sm:opacity-[0.34]"
       />
       <FloatPiece

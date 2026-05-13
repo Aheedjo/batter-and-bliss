@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { FlowNavBack } from "@/components/brand/flow-nav-back";
 import { SectionHeading } from "@/components/brand/section-heading";
@@ -16,20 +16,27 @@ type Props = { drinks: PublicTopping[] };
 
 export function DrinksClient({ drinks }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const drinksOnly = searchParams.get("only") === "1";
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
   const drinkQuantities = useOrderStore((s) => s.drinkQuantities);
   const setDrinkQuantity = useOrderStore((s) => s.setDrinkQuantity);
+  const hasPancakes = pancakeLines.length > 0;
+  const drinkCount = Object.values(drinkQuantities).reduce((sum, qty) => sum + qty, 0);
+  const canContinue = hasPancakes || drinkCount > 0;
 
   useEffect(() => {
-    if (pancakeLines.length === 0) router.replace("/order/stack");
-  }, [pancakeLines.length, router]);
+    if (!hasPancakes && !drinksOnly) router.replace("/order/stack");
+  }, [hasPancakes, drinksOnly, router]);
 
-  if (pancakeLines.length === 0) return null;
+  if (!hasPancakes && !drinksOnly) return null;
 
   return (
     <>
       <div className="mx-auto max-w-lg px-5 pb-40 pt-8 sm:px-6 sm:pt-10">
-        <FlowNavBack href="/order/builds">Pancake orders</FlowNavBack>
+        <FlowNavBack href={hasPancakes ? "/order/builds" : "/order/stack"}>
+          {hasPancakes ? "Pancake orders" : "Choose base"}
+        </FlowNavBack>
 
         <SectionHeading
           eyebrow="Drinks"
@@ -86,8 +93,9 @@ export function DrinksClient({ drinks }: Props) {
       <StickyAction>
         <button
           type="button"
-          onClick={() => router.push("/order/note")}
-          className={btnPrimary}
+          disabled={!canContinue}
+          onClick={() => router.push("/order/checkout")}
+          className={`${btnPrimary} ${!canContinue ? "pointer-events-none opacity-50" : ""}`}
         >
           Continue
         </button>

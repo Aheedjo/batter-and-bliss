@@ -38,6 +38,12 @@ export default {
             text: "#9A4D3C",
             dot: "#C96B5A",
           },
+          /** Warm sage — readable “success” without cool emerald clash */
+          confirmed: {
+            bg: "#E9EFE8",
+            accent: "#CEDDCE",
+            ink: "#2F3E31",
+          },
           red: {
             bg: "#FCE8E8",
             text: "#A93226",
@@ -98,6 +104,14 @@ export default {
           from: { transform: "translate3d(-50%, 0, 0)" },
           to: { transform: "translate3d(0, 0, 0)" },
         },
+        menuSheetIn: {
+          from: { transform: "translate3d(0, 100%, 0)" },
+          to: { transform: "translate3d(0, 0, 0)" },
+        },
+        menuBackdropIn: {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
       },
       animation: {
         "float-drift":
@@ -115,6 +129,10 @@ export default {
         "marquee-slower-reverse": "marqueeXRev 172s linear infinite",
         "marquee-slowest": "marqueeX 198s linear infinite",
         "marquee-slowest-reverse": "marqueeXRev 190s linear infinite",
+        "menu-sheet-in":
+          "menuSheetIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "menu-backdrop-in":
+          "menuBackdropIn 0.28s ease-out both",
       },
     },
   },

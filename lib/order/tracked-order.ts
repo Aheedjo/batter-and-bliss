@@ -1,7 +1,7 @@
 import type { CartSummaryLine } from "@/lib/order/pricing";
 import type { StackId } from "@/lib/order/stacks";
 
-export type TrackedOrderStatus = "pending" | "rejected";
+export type TrackedOrderStatus = "pending" | "confirmed" | "rejected";
 
 /** Snapshot for customer track UI. Full history lives in your backend. */
 export type TrackedOrder = {

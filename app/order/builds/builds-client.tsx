@@ -5,23 +5,24 @@ import { useMemo } from "react";
 import { FlowNavBack } from "@/components/brand/flow-nav-back";
 import { SectionHeading } from "@/components/brand/section-heading";
 import { StickyAction } from "@/components/order/sticky-action";
+import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
 import { RANDOM_BLISS_FEE } from "@/lib/order/constants";
 import { formatPrice } from "@/lib/order/money";
 import type { PancakeLine } from "@/lib/order/pancake-types";
-import { getStackById } from "@/lib/order/stacks";
 import { useOrderStore } from "@/lib/stores/order-store";
 
 const btnPrimary =
   "w-full rounded-full bg-order-brownBtn py-[1.05rem] font-serif text-[15px] font-semibold tracking-[0.01em] text-white shadow-order-btn ring-1 ring-order-brownBtn/20 transition hover:brightness-110 active:scale-[0.99]";
 
-type Props = { catalog: PublicTopping[] };
+type Props = { catalog: PublicTopping[]; stacks: PublicStack[] };
 
 function lineSubtotal(
   line: PancakeLine,
+  stacksById: Map<string, PublicStack>,
   catalog: { id: string; price: number | null }[],
 ) {
-  const stack = getStackById(line.stackId);
+  const stack = stacksById.get(line.stackId);
   if (!stack) return 0;
   let sum = stack.price;
   if (line.randomBliss) {
@@ -35,7 +36,7 @@ function lineSubtotal(
   return sum;
 }
 
-export function BuildsClient({ catalog }: Props) {
+export function BuildsClient({ catalog, stacks }: Props) {
   const router = useRouter();
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
   const removePancakeLine = useOrderStore((s) => s.removePancakeLine);
@@ -45,16 +46,20 @@ export function BuildsClient({ catalog }: Props) {
     () => catalog.map((t) => ({ id: t.id, name: t.name, price: t.price })),
     [catalog],
   );
+  const stacksById = useMemo(
+    () => new Map(stacks.map((s) => [s.id, s])),
+    [stacks],
+  );
 
   return (
     <>
       <div className="mx-auto max-w-lg px-5 pb-40 pt-8 sm:px-6 sm:pt-10">
-        <FlowNavBack href="/order/customize">Customize</FlowNavBack>
+        <FlowNavBack href="/order/stack">Base</FlowNavBack>
 
         <SectionHeading
           eyebrow="Review"
           title="Your pancake orders"
-          description="Each stack can have its own glazing, toppings, and syrups. Add another or continue to drinks."
+          description="Each pancake stack has glazing (one), toppings, and syrups. Platters use platter glazing and platter toppings only. Add another or continue to drinks."
           className="mb-8"
         />
 
@@ -72,8 +77,8 @@ export function BuildsClient({ catalog }: Props) {
         ) : (
           <ul className="flex flex-col gap-3">
             {pancakeLines.map((line, i) => {
-              const stack = getStackById(line.stackId);
-              const sub = lineSubtotal(line, catalog);
+              const stack = stacksById.get(line.stackId);
+              const sub = lineSubtotal(line, stacksById, catalog);
               return (
                 <li
                   key={line.id}
@@ -108,14 +113,18 @@ export function BuildsClient({ catalog }: Props) {
                         router.push("/order/stack");
                       }}
                     >
-                      Change base
+                      Change package
                     </button>
                     <button
                       type="button"
                       className="rounded-full border border-order-line/80 px-3 py-1.5 font-sans text-[11px] font-medium text-order-brownInk transition hover:bg-order-bg"
                       onClick={() => {
                         setEditingLineId(line.id);
-                        router.push("/order/customize");
+                        router.push(
+                          stack?.kind === "platter"
+                            ? "/order/platter"
+                            : "/order/customize",
+                        );
                       }}
                     >
                       Edit add-ons

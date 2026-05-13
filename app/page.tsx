@@ -57,11 +57,11 @@ export default function Home() {
           <div className="relative overflow-hidden rounded-[2rem] shadow-lift ring-1 ring-brand-chocolate/[0.07]">
             <div className="absolute inset-0 bg-gradient-to-t from-brand-rose/25 via-brand-bgDeep/10 to-white/30" />
             <div className="relative aspect-[4/5] w-full">
-              <Image
+        <Image
                 src={IMG.hero}
                 alt="Stack of pancakes with fresh berries and syrup"
                 fill
-                priority
+          priority
                 className="object-cover"
                 sizes="(max-width: 512px) 100vw, 512px"
               />
@@ -75,11 +75,15 @@ export default function Home() {
             id="hero-heading"
             className="mt-2 text-center font-serif text-[1.85rem] font-semibold leading-[1.12] tracking-[-0.03em] text-brand-chocolate sm:text-[2.15rem]"
           >
-            Made with love, served with bliss.
+            Artisanal pancakes and pastries, made fresh for every order.
           </h1>
           <p className="mx-auto mt-4 max-w-[24rem] text-center font-sans text-[15px] leading-[1.55] text-brand-taupe">
-            Premium pancakes &amp; desserts—order the same way as our printed
-            menu.
+            We are an <span className="font-semibold text-brand-chocolate">Abuja-based</span>{" "}
+            dessert kitchen known for{" "}
+            <span className="font-semibold text-brand-chocolate">
+              signature pancake stacks
+            </span>
+            , handcrafted pastries, and thoughtful delivery experience.
           </p>
 
           <Link
@@ -88,11 +92,114 @@ export default function Home() {
           >
             Start your order
           </Link>
+          <Link
+            href="/order/status"
+            className="mt-3 flex w-full items-center justify-center rounded-full border border-brand-chocolate/25 bg-brand-card py-[0.9rem] font-sans text-[13px] font-semibold tracking-[0.03em] text-brand-chocolate shadow-soft ring-1 ring-brand-rose/30 transition hover:bg-brand-cream/60 active:scale-[0.99] sm:text-[14px]"
+          >
+            Track your order
+          </Link>
+        </section>
+
+        <section
+          className="mt-14 sm:mt-16"
+          aria-labelledby="what-we-do-heading"
+        >
+          <MarketingHeading
+            id="what-we-do-heading"
+            eyebrow="What we do"
+            title="A dessert kitchen built around pancakes"
+            description="From signature pancake stacks to pastry boxes for everyday cravings and special moments."
+            align="left"
+            className="mb-5 text-left"
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <article className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-taupe">
+                Signature
+              </p>
+              <h3 className="mt-1 font-serif text-lg font-semibold text-brand-chocolate">
+                Pancake stacks
+              </h3>
+              <p className="mt-1.5 font-sans text-[13px] leading-relaxed text-brand-taupe">
+                Our core menu: fluffy stacks with{" "}
+                <span className="font-semibold text-brand-chocolate">
+                  bold flavors
+                </span>
+                , glazes, and toppings.
+              </p>
+            </article>
+            <article className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-taupe">
+                Freshly made
+              </p>
+              <h3 className="mt-1 font-serif text-lg font-semibold text-brand-chocolate">
+                Pastries
+              </h3>
+              <p className="mt-1.5 font-sans text-[13px] leading-relaxed text-brand-taupe">
+                <span className="font-semibold text-brand-chocolate">
+                  Small-batch
+                </span>{" "}
+                treats designed to pair with brunch, gifting, and celebrations.
+              </p>
+            </article>
+            <article className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-taupe">
+                Delivery-first
+              </p>
+              <h3 className="mt-1 font-serif text-lg font-semibold text-brand-chocolate">
+                Easy ordering
+              </h3>
+              <p className="mt-1.5 font-sans text-[13px] leading-relaxed text-brand-taupe">
+                Straightforward ordering and clear handoff from checkout to order tracking.
+              </p>
+            </article>
+          </div>
         </section>
 
         <div className="relative z-10 mt-14 sm:mt-16">
           <BrandRibbonBand />
         </div>
+
+        <section
+          id="about-batter-and-bliss"
+          className="mt-14 sm:mt-16"
+          aria-labelledby="about-heading"
+        >
+          <MarketingHeading
+            id="about-heading"
+            eyebrow="About Batter & Bliss"
+            title="What makes us different"
+            description="We pair premium ingredients with playful flavor combinations and dependable service."
+            align="left"
+            className="mb-5 text-left"
+          />
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <li className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-sm leading-relaxed text-brand-taupe">
+                <span className="font-semibold text-brand-chocolate">
+                  Craft over shortcuts:
+                </span>{" "}
+                every order is prepared with care, not mass-produced.
+              </p>
+            </li>
+            <li className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-sm leading-relaxed text-brand-taupe">
+                <span className="font-semibold text-brand-chocolate">
+                  Flavor-forward menu:
+                </span>{" "}
+                from classics to signature options like ~Morado.
+              </p>
+            </li>
+            <li className="rounded-2xl bg-brand-card px-4 py-4 shadow-soft ring-1 ring-brand-rose/25">
+              <p className="font-sans text-sm leading-relaxed text-brand-taupe">
+                <span className="font-semibold text-brand-chocolate">
+                  Guest-first experience:
+                </span>{" "}
+                simple ordering, transparent status, and warm presentation.
+              </p>
+            </li>
+          </ul>
+        </section>
 
         <section
           id="featured"
@@ -143,13 +250,19 @@ export default function Home() {
               Order status
             </Link>
             <Link
+              href="/privacy"
+              className="transition hover:text-brand-chocolate"
+            >
+              Privacy
+            </Link>
+            <Link
               href="/order/closed"
               className="transition hover:text-brand-chocolate"
             >
               Hours
             </Link>
           </nav>
-        </footer>
+      </footer>
       </div>
     </div>
   );

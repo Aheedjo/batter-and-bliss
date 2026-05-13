@@ -11,10 +11,13 @@ const path = "/admin/menu";
 
 const toppingCategorySchema = z.enum([
   "glazing",
+  "platter_glazing",
   "topping",
+  "platter_topping",
   "syrup",
   "drink",
 ]);
+const stackKindSchema = z.enum(["pancake", "platter"]);
 
 export type ActionState = { ok: true } | { ok: false; message: string };
 
@@ -35,6 +38,12 @@ function parseToppingCategory(formData: FormData) {
   return p.success ? p.data : "topping";
 }
 
+function parseStackKind(formData: FormData) {
+  const raw = formData.get("kind")?.toString() ?? "";
+  const p = stackKindSchema.safeParse(raw);
+  return p.success ? p.data : "pancake";
+}
+
 export async function createTopping(
   _prev: ActionState | undefined,
   formData: FormData,
@@ -42,6 +51,7 @@ export async function createTopping(
   const parsed = menuItemFormSchema.safeParse({
     name: formData.get("name"),
     priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
   });
   if (!parsed.success) {
     const first =
@@ -55,6 +65,7 @@ export async function createTopping(
         name: parsed.data.name,
         price: parsed.data.price,
         category,
+        description: parsed.data.description,
         available: true,
       },
     });
@@ -77,6 +88,7 @@ export async function updateTopping(
   const parsed = menuItemFormSchema.safeParse({
     name: formData.get("name"),
     priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
   });
   if (!parsed.success) {
     const first =
@@ -91,12 +103,30 @@ export async function updateTopping(
         name: parsed.data.name,
         price: parsed.data.price,
         category,
+        description: parsed.data.description,
       },
     });
   } catch (e) {
     if (isNotFound(e)) return fail("Item not found.");
     console.error(e);
     return fail("Could not update topping.");
+  }
+  revalidatePath(path);
+  return { ok: true };
+}
+
+export async function deleteTopping(
+  _prev: ActionState | undefined,
+  formData: FormData,
+): Promise<ActionState> {
+  const idParsed = cuidSchema.safeParse(formData.get("id")?.toString());
+  if (!idParsed.success) return fail("Invalid item.");
+  try {
+    await prisma.topping.delete({ where: { id: idParsed.data } });
+  } catch (e) {
+    if (isNotFound(e)) return fail("Item not found.");
+    console.error(e);
+    return fail("Could not delete item.");
   }
   revalidatePath(path);
   return { ok: true };
@@ -119,6 +149,111 @@ export async function setToppingAvailable(id: string, available: unknown) {
   revalidatePath(path);
 }
 
+export async function createStack(
+  _prev: ActionState | undefined,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = menuItemFormSchema.safeParse({
+    name: formData.get("name"),
+    priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
+  });
+  if (!parsed.success) {
+    const first =
+      parsed.error.issues[0]?.message ?? "Please check the form";
+    return fail(first);
+  }
+  const kind = parseStackKind(formData);
+  try {
+    await prisma.stack.create({
+      data: {
+        name: parsed.data.name,
+        kind,
+        price: parsed.data.price,
+        description: parsed.data.description,
+        available: true,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    return fail("Could not create stack.");
+  }
+  revalidatePath(path);
+  return { ok: true };
+}
+
+export async function updateStack(
+  _prev: ActionState | undefined,
+  formData: FormData,
+): Promise<ActionState> {
+  const idRaw = formData.get("id")?.toString();
+  const idParsed = cuidSchema.safeParse(idRaw);
+  if (!idParsed.success) return fail("Invalid item.");
+
+  const parsed = menuItemFormSchema.safeParse({
+    name: formData.get("name"),
+    priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
+  });
+  if (!parsed.success) {
+    const first =
+      parsed.error.issues[0]?.message ?? "Please check the form";
+    return fail(first);
+  }
+  const kind = parseStackKind(formData);
+  try {
+    await prisma.stack.update({
+      where: { id: idParsed.data },
+      data: {
+        name: parsed.data.name,
+        kind,
+        price: parsed.data.price,
+        description: parsed.data.description,
+      },
+    });
+  } catch (e) {
+    if (isNotFound(e)) return fail("Item not found.");
+    console.error(e);
+    return fail("Could not update stack.");
+  }
+  revalidatePath(path);
+  return { ok: true };
+}
+
+export async function deleteStack(
+  _prev: ActionState | undefined,
+  formData: FormData,
+): Promise<ActionState> {
+  const idParsed = cuidSchema.safeParse(formData.get("id")?.toString());
+  if (!idParsed.success) return fail("Invalid item.");
+  try {
+    await prisma.stack.delete({ where: { id: idParsed.data } });
+  } catch (e) {
+    if (isNotFound(e)) return fail("Item not found.");
+    console.error(e);
+    return fail("Could not delete item.");
+  }
+  revalidatePath(path);
+  return { ok: true };
+}
+
+export async function setStackAvailable(id: string, available: unknown) {
+  const idParsed = cuidSchema.safeParse(id);
+  if (!idParsed.success) return;
+
+  const on = available === true;
+
+  try {
+    await prisma.stack.update({
+      where: { id: idParsed.data },
+      data: { available: on },
+    });
+  } catch (e) {
+    if (!isNotFound(e)) console.error(e);
+  }
+  revalidatePath(path);
+}
+
 export async function createExtra(
   _prev: ActionState | undefined,
   formData: FormData,
@@ -126,6 +261,7 @@ export async function createExtra(
   const parsed = menuItemFormSchema.safeParse({
     name: formData.get("name"),
     priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
   });
   if (!parsed.success) {
     const first =
@@ -137,6 +273,7 @@ export async function createExtra(
       data: {
         name: parsed.data.name,
         price: parsed.data.price,
+        description: parsed.data.description,
         available: true,
       },
     });
@@ -159,6 +296,7 @@ export async function updateExtra(
   const parsed = menuItemFormSchema.safeParse({
     name: formData.get("name"),
     priceInput: formData.get("price")?.toString(),
+    description: formData.get("description")?.toString(),
   });
   if (!parsed.success) {
     const first =
@@ -168,12 +306,33 @@ export async function updateExtra(
   try {
     await prisma.extra.update({
       where: { id: idParsed.data },
-      data: { name: parsed.data.name, price: parsed.data.price },
+      data: {
+        name: parsed.data.name,
+        price: parsed.data.price,
+        description: parsed.data.description,
+      },
     });
   } catch (e) {
     if (isNotFound(e)) return fail("Item not found.");
     console.error(e);
     return fail("Could not update extra.");
+  }
+  revalidatePath(path);
+  return { ok: true };
+}
+
+export async function deleteExtra(
+  _prev: ActionState | undefined,
+  formData: FormData,
+): Promise<ActionState> {
+  const idParsed = cuidSchema.safeParse(formData.get("id")?.toString());
+  if (!idParsed.success) return fail("Invalid item.");
+  try {
+    await prisma.extra.delete({ where: { id: idParsed.data } });
+  } catch (e) {
+    if (isNotFound(e)) return fail("Item not found.");
+    console.error(e);
+    return fail("Could not delete item.");
   }
   revalidatePath(path);
   return { ok: true };

@@ -6,6 +6,7 @@ export const menuItemFormSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required").max(120),
     priceInput: z.string().optional(),
+    description: z.string().max(2000).optional(),
   })
   .refine(
     (data) => {
@@ -27,6 +28,10 @@ export const menuItemFormSchema = z
       data.priceInput === undefined || data.priceInput.trim() === ""
         ? null
         : Number.parseFloat(data.priceInput.trim()),
+    description:
+      data.description === undefined || data.description.trim() === ""
+        ? null
+        : data.description.trim(),
   }));
 
-export type MenuItemFormValues = z.infer<typeof menuItemFormSchema>;
+export type MenuItemFormValues = z.output<typeof menuItemFormSchema>;

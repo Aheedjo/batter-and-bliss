@@ -14,14 +14,17 @@ export function NoteClient() {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
+  const drinkQuantities = useOrderStore((s) => s.drinkQuantities);
   const note = useOrderStore((s) => s.note);
   const setNote = useOrderStore((s) => s.setNote);
+  const hasPancakes = pancakeLines.length > 0;
+  const hasDrinks = Object.values(drinkQuantities).some((qty) => qty > 0);
 
   useEffect(() => {
-    if (pancakeLines.length === 0) router.replace("/order/stack");
-  }, [pancakeLines.length, router]);
+    if (!hasPancakes && !hasDrinks) router.replace("/order/stack");
+  }, [hasPancakes, hasDrinks, router]);
 
-  if (pancakeLines.length === 0) return null;
+  if (!hasPancakes && !hasDrinks) return null;
 
   return (
     <>

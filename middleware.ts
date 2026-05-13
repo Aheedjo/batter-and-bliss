@@ -1,32 +1,43 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { verifyAdminBasicAuth } from "@/lib/auth/admin-basic";
+import { isAdminPasswordConfigured } from "@/lib/auth/admin-env";
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionToken,
+} from "@/lib/auth/admin-session";
 
-export function middleware(request: NextRequest) {
-  const user = process.env.ADMIN_BASIC_AUTH_USER;
-  const password = process.env.ADMIN_BASIC_AUTH_PASSWORD;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  if (!user?.length || !password?.length) {
+  if (!pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
 
-  const ok = verifyAdminBasicAuth(
-    request.headers.get("authorization"),
-    user,
-    password,
-  );
-
-  if (ok) {
+  const passwordConfigured = isAdminPasswordConfigured();
+  if (!passwordConfigured) {
     return NextResponse.next();
   }
 
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Batter & Bliss Admin"',
-      "Cache-Control": "no-store",
-    },
-  });
+  const onLogin =
+    pathname === "/admin/login" || pathname === "/admin/login/";
+
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const ok = await verifyAdminSessionToken(token);
+
+  if (onLogin) {
+    if (ok) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (!ok) {
+    const login = new URL("/admin/login", request.url);
+    login.searchParams.set("from", pathname);
+    return NextResponse.redirect(login);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

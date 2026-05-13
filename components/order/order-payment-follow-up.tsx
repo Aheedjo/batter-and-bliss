@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState, useTransition } from "react";
+import { reportTransferSent } from "@/app/order/checkout/actions";
 import { BankTransferPanel } from "@/components/order/bank-transfer-panel";
 import type { TrackedOrder } from "@/lib/order/tracked-order";
+import { SHOP_TIMEZONE } from "@/lib/order/lagos-calendar";
 import { useOrderStore } from "@/lib/stores/order-store";
 
 const btnOutline =
@@ -15,6 +17,7 @@ function formatReportedAt(iso: string) {
       day: "numeric",
       hour: "numeric",
       minute: "2-digit",
+      timeZone: SHOP_TIMEZONE,
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -23,14 +26,28 @@ function formatReportedAt(iso: string) {
 
 type Props = {
   order: TrackedOrder;
+  showActionButton?: boolean;
 };
 
-/** Pending bank transfer: names for matching, account panel, “I’ve sent” ack. */
-export function OrderPaymentFollowUp({ order }: Props) {
+/** Pending bank transfer: names for matching, account panel, “I’ve sent” ack (persisted). */
+export function OrderPaymentFollowUp({
+  order,
+  showActionButton = true,
+}: Props) {
   const markTransferSent = useOrderStore((s) => s.markTransferSent);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [reportPending, startReport] = useTransition();
 
   const onSent = useCallback(() => {
-    markTransferSent(order.reference);
+    setReportError(null);
+    startReport(async () => {
+      const res = await reportTransferSent(order.reference);
+      if (!res.ok) {
+        setReportError(res.message);
+        return;
+      }
+      markTransferSent(order.reference);
+    });
   }, [markTransferSent, order.reference]);
 
   if (order.status !== "pending") return null;
@@ -87,20 +104,34 @@ export function OrderPaymentFollowUp({ order }: Props) {
           </p>
           <p className="mt-1 font-sans text-[12px] leading-snug text-emerald-800/90 dark:text-emerald-200/85">
             You marked this transfer as sent{" "}
-            {formatReportedAt(order.transferReportedAt)}. We&apos;ll move your
-            order along once the funds land.
+            {formatReportedAt(order.transferReportedAt)}. We&apos;ll move your order along once the funds land.
           </p>
         </div>
-      ) : (
+      ) : showActionButton ? (
         <>
-          <button type="button" onClick={onSent} className={btnOutline}>
-            I&apos;ve sent the transfer
+          <button
+            type="button"
+            onClick={onSent}
+            disabled={reportPending}
+            className={`${btnOutline} ${reportPending ? "pointer-events-none opacity-60" : ""}`}
+          >
+            {reportPending ? "Saving…" : "I've sent the transfer"}
           </button>
-          <p className="mt-2 text-center font-sans text-[11px] text-order-muted">
-            Tap after you&apos;ve completed payment from your bank app.
-          </p>
+          {reportError ? (
+            <p
+              className="mt-3 rounded-xl border border-red-200/80 bg-red-50 px-3 py-2 text-center font-sans text-[12px] leading-snug text-red-800 dark:border-red-800/70 dark:bg-red-950/50 dark:text-red-100"
+              role="alert"
+            >
+              {reportError}
+            </p>
+          ) : (
+            <p className="mt-2 text-center font-sans text-[11px] text-order-muted">
+              Tap once after you&apos;ve paid—only counted once toward
+              today&apos;s limit.
+            </p>
+          )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

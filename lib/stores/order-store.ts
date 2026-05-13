@@ -31,6 +31,11 @@ type OrderState = {
   addPancakeLine: (stackId: StackId) => void;
   updateLineStack: (lineId: string, stackId: StackId) => void;
   toggleLineAddOn: (addOnId: string) => void;
+  /** At most one of `exclusiveIds` may be chosen; clears Random Bliss when used. */
+  toggleExclusiveAddOnGroup: (
+    exclusiveIds: readonly string[],
+    addOnId: string,
+  ) => void;
   setLineRandomBliss: (on: boolean) => void;
   removePancakeLine: (lineId: string) => void;
   setDrinkQuantity: (drinkId: string, qty: number) => void;
@@ -39,6 +44,15 @@ type OrderState = {
   setBuyerPhone: (phone: string) => void;
   addActiveOrder: (order: TrackedOrder) => void;
   markTransferSent: (reference: string) => void;
+  mergeActiveOrderServerState: (
+    rows: Array<{
+      reference: string;
+      status: "pending" | "confirmed" | "rejected";
+      etaLabel: string | null;
+      rejectionReason: string | null;
+      transferReportedAt: string | null;
+    }>,
+  ) => void;
   setTrackSelectedRef: (ref: string | null) => void;
   pruneStaleActiveOrders: () => void;
   resetOrder: () => void;
@@ -108,6 +122,25 @@ export const useOrderStore = create<OrderState>()(
           };
         }),
 
+      toggleExclusiveAddOnGroup: (exclusiveIds, addOnId) =>
+        set((s) => {
+          const lid = s.editingLineId;
+          if (!lid) return s;
+          const exclusion = new Set(exclusiveIds);
+          return {
+            pancakeLines: s.pancakeLines.map((line) => {
+              if (line.id !== lid) return line;
+              const wasOn = line.addOnIds.includes(addOnId);
+              const stripped = line.addOnIds.filter((id) => !exclusion.has(id));
+              return {
+                ...line,
+                randomBliss: false,
+                addOnIds: wasOn ? stripped : [...stripped, addOnId],
+              };
+            }),
+          };
+        }),
+
       setLineRandomBliss: (on) =>
         set((s) => {
           const lid = s.editingLineId;
@@ -165,6 +198,39 @@ export const useOrderStore = create<OrderState>()(
           return { activeOrders };
         }),
 
+      mergeActiveOrderServerState: (rows) =>
+        set((s) => {
+          if (!rows.length) return s;
+          const byRef = new Map(rows.map((r) => [r.reference, r]));
+          let changed = false;
+          const activeOrders = s.activeOrders.map((o) => {
+            const fromServer = byRef.get(o.reference);
+            if (!fromServer) return o;
+            const nextStatus = fromServer.status;
+            const nextEta = fromServer.etaLabel ?? undefined;
+            const nextRejection = fromServer.rejectionReason ?? undefined;
+            const nextReportedAt =
+              fromServer.transferReportedAt ?? o.transferReportedAt;
+            if (
+              o.status === nextStatus &&
+              o.etaLabel === nextEta &&
+              o.rejectionReason === nextRejection &&
+              o.transferReportedAt === nextReportedAt
+            ) {
+              return o;
+            }
+            changed = true;
+            return {
+              ...o,
+              status: nextStatus,
+              etaLabel: nextEta,
+              rejectionReason: nextRejection,
+              transferReportedAt: nextReportedAt,
+            };
+          });
+          return changed ? { activeOrders } : s;
+        }),
+
       setTrackSelectedRef: (ref) => set({ trackSelectedRef: ref }),
 
       pruneStaleActiveOrders: () =>
@@ -187,7 +253,7 @@ export const useOrderStore = create<OrderState>()(
         }),
     }),
     {
-      name: "batter-bliss-order-v5",
+      name: "batter-bliss-order-v6",
       partialize: (s) => ({
         pancakeLines: s.pancakeLines,
         editingLineId: s.editingLineId,

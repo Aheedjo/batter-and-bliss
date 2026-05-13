@@ -1,7 +1,11 @@
 import { Suspense } from "react";
+import { getAvailableStacks } from "@/lib/data/stacks-public";
 import { StackClient } from "./stack-client";
 
-export default function ChooseStackPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ChooseStackPage() {
+  const stacks = await getAvailableStacks();
   return (
     <Suspense
       fallback={
@@ -10,7 +14,7 @@ export default function ChooseStackPage() {
         </div>
       }
     >
-      <StackClient />
+      <StackClient stacks={stacks} />
     </Suspense>
   );
 }

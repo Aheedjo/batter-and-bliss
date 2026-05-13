@@ -15,7 +15,12 @@
     { "name": "Pistachio Syrup", "price": 600, "category": "syrup" },
     { "name": "Lotus Syrup", "price": 500, "category": "syrup" },
     { "name": "Tiger nut drink (Kunun Aya)", "price": 1500, "category": "drink" },
-    { "name": "Coconut Milk", "price": 2000, "category": "drink" }
+    { "name": "Coconut Milk", "price": 2000, "category": "drink" },
+    { "name": "Chocolate", "price": null, "category": "platter_glazing" },
+    { "name": "Whipping cream", "price": null, "category": "platter_glazing" },
+    { "name": "Pistachio", "price": null, "category": "platter_topping" },
+    { "name": "White chocolate", "price": null, "category": "platter_topping" },
+    { "name": "Lotus", "price": null, "category": "platter_topping" }
   ],
   "extras": [
     { "name": "Extra scoop", "price": 500 },

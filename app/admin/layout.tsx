@@ -1,5 +1,7 @@
-import Link from "next/link";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { FloatingBrandDecor } from "@/components/brand/floating-brand-decor";
+import { SiteHeader } from "@/components/brand/site-header";
+import { logoutAdmin } from "@/app/admin/login/actions";
 
 export default function AdminLayout({
   children,
@@ -7,29 +9,15 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--ui-canvas)]">
-      <header className="border-b border-[var(--ui-border)] bg-[var(--ui-surface)]/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              Batter &amp; Bliss
-            </p>
-            <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-              Admin
-            </h1>
-          </div>
-          <Link
-            href="/"
-            className="text-sm font-medium text-stone-600 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-          >
-            ← Site
-          </Link>
+    <div className="relative min-h-screen bg-order-bg text-order-brown [color-scheme:light]">
+      <FloatingBrandDecor variant="order" />
+      <SiteHeader variant="admin" adminLogoutAction={logoutAdmin} />
+      <div className="relative overflow-x-hidden">
+        <div className="mx-auto max-w-3xl px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-1 sm:px-6 sm:pb-[calc(7rem+env(safe-area-inset-bottom))]">
+          {children}
         </div>
-      </header>
-      <AdminNav />
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        {children}
       </div>
+      <AdminNav />
     </div>
   );
 }

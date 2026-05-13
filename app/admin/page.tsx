@@ -1,89 +1,66 @@
-import Link from "next/link";
+import { OverviewDashboard } from "@/components/admin/overview-dashboard";
+import { orderToAdminListItem } from "@/lib/admin/map-prisma-order";
+import { startOfLocalDay } from "@/lib/admin/order-display";
 import { prisma } from "@/lib/db";
+import { getDailyCapacityState } from "@/lib/order/daily-order-cap";
+import { formatShopCapWindowSummary } from "@/lib/order/lagos-calendar";
+import {
+  buildPublicOrderIntakeSnapshot,
+  shopSettingRowToIntakeSettings,
+} from "@/lib/order/order-intake";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
-  const [
-    toppingTotal,
-    toppingAvailable,
-    extraTotal,
-    extraAvailable,
-  ] = await Promise.all([
-    prisma.topping.count(),
-    prisma.topping.count({ where: { available: true } }),
-    prisma.extra.count(),
-    prisma.extra.count({ where: { available: true } }),
-  ]);
+  // eslint-disable-next-line react-hooks/purity -- per-request clock snapshot
+  const renderedAtMs = Date.now();
+  const renderedAt = new Date(renderedAtMs);
 
-  const statCards = [
-    {
-      label: "Menu add-ons",
-      value: toppingTotal,
-      sub: `${toppingAvailable} available`,
-      href: "/admin/menu",
-      hint: "Glazing, toppings, syrups, drinks",
-    },
-    {
-      label: "Extras",
-      value: extraTotal,
-      sub: `${extraAvailable} available`,
-      href: "/admin/menu",
-      hint: "Managed on the Menu page",
-    },
-  ];
+  const [forStats, pendingRows, pendingInQueue, capacityState, shopRow] =
+    await Promise.all([
+      prisma.order.findMany({
+        select: { placedAt: true, status: true },
+      }),
+      prisma.order.findMany({
+        where: { status: "pending" },
+        orderBy: { placedAt: "asc" },
+        take: 5,
+      }),
+      prisma.order.count({ where: { status: "pending" } }),
+      getDailyCapacityState(renderedAt),
+      prisma.shopSetting.findUnique({ where: { id: "default" } }),
+    ]);
+
+  const t0 = startOfLocalDay(renderedAt);
+  const todayOrders = forStats.filter(
+    (o) => startOfLocalDay(o.placedAt) === t0,
+  );
+
+  const stats = {
+    totalOrdersToday: todayOrders.length,
+    pendingToday: todayOrders.filter((o) => o.status === "pending").length,
+    confirmedToday: todayOrders.filter((o) => o.status === "confirmed").length,
+    pendingInQueue,
+  };
+
+  const recentPending = pendingRows.map(orderToAdminListItem);
+
+  const intakeSnapshot = buildPublicOrderIntakeSnapshot(
+    renderedAt,
+    shopSettingRowToIntakeSettings(shopRow),
+  );
 
   return (
-    <div className="space-y-10">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-          Overview
-        </h2>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Quick read on catalog health. Use Menu to edit items and toggles.
-        </p>
-      </div>
-
-      <ul className="grid gap-4 sm:grid-cols-2">
-        {statCards.map((card) => (
-          <li key={card.label}>
-            <Link
-              href={card.href}
-              className="block rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[var(--ui-shadow)] transition hover:border-stone-300/80 dark:hover:border-stone-600"
-            >
-              <p className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                {card.label}
-              </p>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">
-                {card.value}
-              </p>
-              <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
-                {card.sub}
-              </p>
-              <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
-                {card.hint} →
-              </p>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      <section className="rounded-2xl border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-muted)]/80 p-6">
-        <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-100">
-          Next: orders &amp; API
-        </h3>
-        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
-          Customer checkout will move to a persisted order model and routes.
-          The{" "}
-          <Link
-            href="/admin/orders"
-            className="font-medium text-stone-800 underline decoration-stone-400/60 underline-offset-2 hover:decoration-stone-600 dark:text-stone-200"
-          >
-            Orders
-          </Link>{" "}
-          section is ready to plug in once that layer ships.
-        </p>
-      </section>
-    </div>
+    <OverviewDashboard
+      stats={stats}
+      recentPending={recentPending}
+      renderedAtMs={renderedAtMs}
+      dailyCap={{
+        dailyOrderCap: capacityState.cap,
+        transferredSlotsToday: capacityState.used,
+        capWindowSummary: formatShopCapWindowSummary(renderedAt),
+      }}
+      intakeSnapshot={intakeSnapshot}
+    />
   );
 }

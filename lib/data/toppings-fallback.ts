@@ -16,7 +16,7 @@ function stableToppingId(category: string, name: string): string {
 
 function rowToPublic(row: {
   name: string;
-  price: number;
+  price: number | null;
   category: string;
 }): PublicTopping | null {
   if (!isToppingCategory(row.category)) return null;

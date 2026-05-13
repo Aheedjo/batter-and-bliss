@@ -1,12 +1,12 @@
 # Batter & Bliss
 
-Customer-facing site and order flow for **Batter & Bliss** (landing, build-your-own pancake journey, checkout). Admin tools manage menu add-ons backed by **Prisma** and **SQLite**.
+Customer-facing site and order flow for **Batter & Bliss** (landing, build-your-own pancake journey, checkout). Admin tools manage menu add-ons backed by **Prisma** and **PostgreSQL**.
 
 ## Stack
 
 - **Next.js** 16 (App Router), **React** 19, **TypeScript**
 - **Tailwind CSS** 3
-- **Prisma** 6 + SQLite (`DATABASE_URL`)
+- **Prisma** 6 + PostgreSQL (`DATABASE_URL`, e.g. Neon)
 - **Zustand** for client order state, **Zod** for validation, **react-hook-form** where forms need it
 
 ## Prerequisites
@@ -48,7 +48,7 @@ Customer-facing site and order flow for **Batter & Bliss** (landing, build-your-
 | `npm run build` | Production build |
 | `npm run start` | Run production server |
 | `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
+| `npm run typecheck` | `prisma generate` then `tsc --noEmit` (keeps Prisma types in sync) |
 | `npm run db:generate` | Generate Prisma Client |
 | `npm run db:migrate` | Create/apply migrations (dev) |
 | `npm run db:push` | Push schema to DB (prototyping) |
@@ -59,14 +59,18 @@ Customer-facing site and order flow for **Batter & Bliss** (landing, build-your-
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `DATABASE_URL` | Yes | SQLite connection string, e.g. `file:./dev.db` (path is relative to the `prisma/` folder) |
+| `DATABASE_URL` | Yes | PostgreSQL URL (e.g. Neon), e.g. `postgresql://…?sslmode=require` |
 | `NEXT_PUBLIC_BANK_NAME` | No | Bank name on checkout / tracking (browser-exposed) |
 | `NEXT_PUBLIC_BANK_ACCOUNT_NUMBER` | No | Account number shown to customers |
 | `NEXT_PUBLIC_BANK_ACCOUNT_NAME` | No | Account name shown to customers |
-| `ADMIN_BASIC_AUTH_USER` | No* | HTTP Basic Auth username for `/admin` |
-| `ADMIN_BASIC_AUTH_PASSWORD` | No* | HTTP Basic Auth password for `/admin` |
+| `ADMIN_USER` | No | Username for `/admin/login` (defaults to `admin`) |
+| `ADMIN_PASSWORD` | No* | Password for admin login; session cookie after sign-in |
+| `ADMIN_JWT_PEPPER` | No | Optional extra secret mixed into session signing |
+| `ADMIN_BASIC_AUTH_*` | No | Legacy only: still read as fallback if `ADMIN_PASSWORD` / `ADMIN_USER` are unset |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | No | Enables Google Places address suggestions on checkout; enable Maps JavaScript API + Places API and restrict the key by HTTP referrer |
+| `NEXT_PUBLIC_GOOGLE_PLACES_COUNTRY` | No | Comma-separated ISO country codes for suggestion bias (defaults to `ng`). Set to `all` to disable the country filter |
 
-\*If **both** admin variables are set, all `/admin` routes require Basic Auth. If either is missing, `/admin` is not protected by middleware—set both in production when exposing admin publicly.
+\*If **`ADMIN_PASSWORD`** (or legacy **`ADMIN_BASIC_AUTH_PASSWORD`**) is set, `/admin` (except `/admin/login`) requires a signed-in session. If no admin password env is set, `/admin` is open—only for trusted local dev.
 
 See `.env.example` for notes and placeholders.
 
@@ -74,9 +78,10 @@ See `.env.example` for notes and placeholders.
 
 - **`/`** — Marketing / landing
 - **`/order/*`** — Order flow (stack, customize, toppings, syrups, drinks, note, checkout, confirmation, etc.)
-- **`/admin`** — Overview dashboard (catalog counts)
+- **`/admin/login`** — Admin sign-in (when `ADMIN_PASSWORD` is set)
+- **`/admin`** — Overview dashboard
 - **`/admin/menu`** — CRUD-style management of **toppings** (glazing / topping / syrup / drink) and **extras**; availability toggles
-- **`/admin/orders`** — Placeholder until order persistence and APIs exist
+- **`/admin/orders`** — Order queue from the database: filters (all / pending / confirmed / rejected), grouped by day, **Accept** / **Reject** (with customer-facing reason)
 
 ## Project layout (high level)
 
@@ -95,12 +100,10 @@ npm run build
 
 ## Deploy
 
-Deploy like any Next.js app (e.g. [Vercel](https://vercel.com/docs/frameworks/nextjs)). Set bank `NEXT_PUBLIC_*` values and admin Basic Auth if the admin UI is exposed.
+Deploy like any Next.js app (e.g. [Vercel](https://vercel.com/docs/frameworks/nextjs)). Set bank `NEXT_PUBLIC_*` values, `DATABASE_URL`, and **`ADMIN_PASSWORD`** (plus optional `ADMIN_USER`) if the admin UI is exposed.
 
 ### Database on Vercel (and other serverless hosts)
 
-The repo’s default **SQLite** file (`prisma/*.db`) is **not** committed (see `.gitignore`), and serverless runtimes are a poor fit for a local file database. If `DATABASE_URL` is missing or points at a non-existent file, Prisma would throw on routes that load the menu (e.g. `/order/customize`).
+The app uses **PostgreSQL** (e.g. [Neon](https://neon.tech/)). Run `npx prisma migrate deploy` (and optional `db seed`) on the host. Set `DATABASE_URL` in the host’s environment.
 
-**Customer order pages** use `lib/data/toppings-public.ts`: on any database error they **fall back** to the baked-in catalog in `lib/data/default-menu.json`, so the storefront keeps working even without a live DB.
-
-**Admin** (`/admin/*`) still needs a working `DATABASE_URL`. For production, point Prisma at a hosted database ([Prisma Postgres](https://www.prisma.io/docs/postgres), [Turso](https://docs.turso.tech/), [Neon](https://neon.tech/), etc.), run migrations and seed there, and set `DATABASE_URL` in the host’s environment.
+Checkouts are saved to the **`Order`** table so `/admin/orders` can list them. After `git pull`, run `npx prisma migrate deploy` (or `db push` in dev) so the schema includes `Order`.

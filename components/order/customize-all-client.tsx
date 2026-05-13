@@ -7,6 +7,7 @@ import { SectionHeading } from "@/components/brand/section-heading";
 import { RandomBlissCard } from "@/components/order/random-bliss-card";
 import { StickyAction } from "@/components/order/sticky-action";
 import { ToppingGridCard } from "@/components/order/topping-grid-card";
+import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
 import { useOrderStore } from "@/lib/stores/order-store";
 
@@ -22,22 +23,33 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 type Props = {
+  stacks: PublicStack[];
   glazing: PublicTopping[];
   toppings: PublicTopping[];
   syrups: PublicTopping[];
 };
 
-export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
+export function CustomizeAllClient({ stacks, glazing, toppings, syrups }: Props) {
   const router = useRouter();
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
   const editingLineId = useOrderStore((s) => s.editingLineId);
   const toggleLineAddOn = useOrderStore((s) => s.toggleLineAddOn);
+  const toggleExclusiveAddOnGroup = useOrderStore(
+    (s) => s.toggleExclusiveAddOnGroup,
+  );
   const setLineRandomBliss = useOrderStore((s) => s.setLineRandomBliss);
 
   const line = useMemo(
     () => pancakeLines.find((l) => l.id === editingLineId),
     [pancakeLines, editingLineId],
   );
+  const stack = useMemo(
+    () => (line ? stacks.find((s) => s.id === line.stackId) : null),
+    [line, stacks],
+  );
+
+  const glazingIds = useMemo(() => glazing.map((g) => g.id), [glazing]);
+  const glazingIdSet = useMemo(() => new Set(glazingIds), [glazingIds]);
 
   useEffect(() => {
     if (pancakeLines.length === 0) {
@@ -46,10 +58,19 @@ export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
     }
     if (!editingLineId || !line) {
       router.replace("/order/builds");
+      return;
     }
-  }, [pancakeLines.length, editingLineId, line, router]);
+    if (stack?.kind === "platter") {
+      router.replace("/order/platter");
+    }
+  }, [pancakeLines.length, editingLineId, line, stack, router]);
 
-  if (!line || !editingLineId) return null;
+  if (!line || !editingLineId || stack?.kind === "platter") return null;
+
+  const glazingOk =
+    line.randomBliss ||
+    glazing.length === 0 ||
+    line.addOnIds.filter((id) => glazingIdSet.has(id)).length === 1;
 
   const showPickOwn =
     glazing.length > 0 || toppings.length > 0 || syrups.length > 0;
@@ -88,7 +109,8 @@ export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
           <>
             <SectionLabel>Glazing</SectionLabel>
             <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Coat this stack—same section as the printed menu.
+              Pick one glazing for this stack (required unless you chose Random
+              Bliss).
             </p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
               {glazing.map((t) => (
@@ -97,7 +119,9 @@ export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
                     name={t.name}
                     price={t.price}
                     selected={!line.randomBliss && line.addOnIds.includes(t.id)}
-                    onToggle={() => toggleLineAddOn(t.id)}
+                    onToggle={() =>
+                      toggleExclusiveAddOnGroup(glazingIds, t.id)
+                    }
                   />
                 </li>
               ))}
@@ -130,7 +154,7 @@ export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
           <>
             <SectionLabel>Syrups</SectionLabel>
             <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Multiple syrups allowed on this order.
+              You can pick several syrups on this order.
             </p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
               {syrups.map((t) => (
@@ -149,13 +173,21 @@ export function CustomizeAllClient({ glazing, toppings, syrups }: Props) {
       </div>
 
       <StickyAction>
-        <button
-          type="button"
-          onClick={() => router.push("/order/builds")}
-          className={btnPrimary}
-        >
-          Continue
-        </button>
+        <div className="space-y-2">
+          {!glazingOk ? (
+            <p className="text-center font-sans text-[12px] text-order-taupe">
+              Pick one glazing, or switch on Random Bliss, to continue.
+            </p>
+          ) : null}
+          <button
+            type="button"
+            disabled={!glazingOk}
+            onClick={() => router.push("/order/builds")}
+            className={`${btnPrimary} ${!glazingOk ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Continue
+          </button>
+        </div>
       </StickyAction>
     </>
   );

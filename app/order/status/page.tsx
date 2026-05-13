@@ -1,7 +1,11 @@
 import { Suspense } from "react";
+import { getAvailableStacks } from "@/lib/data/stacks-public";
 import { StatusClient } from "./status-client";
 
-export default function OrderStatusPage() {
+export const dynamic = "force-dynamic";
+
+export default async function OrderStatusPage() {
+  const stacks = await getAvailableStacks();
   return (
     <Suspense
       fallback={
@@ -10,7 +14,7 @@ export default function OrderStatusPage() {
         </div>
       }
     >
-      <StatusClient />
+      <StatusClient stacks={stacks} />
     </Suspense>
   );
 }

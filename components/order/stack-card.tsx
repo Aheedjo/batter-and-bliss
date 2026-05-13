@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import type { StackId } from "@/lib/order/stacks";
 import { formatPrice } from "@/lib/order/money";
 
 type Stack = {
-  id: StackId;
+  id: string;
   name: string;
   subtitle?: string;
   price: number;
@@ -33,6 +32,10 @@ export function StackCard({ stack, selected, onSelect }: Props) {
           fill
           className="object-cover"
           sizes="(max-width: 448px) 100vw, 448px"
+          unoptimized={
+            process.env.NODE_ENV === "development" &&
+            stack.image.startsWith("https://images.unsplash.com/")
+          }
         />
         <div
           className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"

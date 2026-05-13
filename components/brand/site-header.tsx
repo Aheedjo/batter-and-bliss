@@ -14,16 +14,20 @@ const FLOW_PATHS = [
 ] as const;
 
 type Props = {
-  variant: "marketing" | "flow";
+  variant: "marketing" | "flow" | "admin";
+  /** Passed from server layout; shows “Log out” on admin (except login page). */
+  adminLogoutAction?: () => Promise<void>;
 };
 
-export function SiteHeader({ variant }: Props) {
+export function SiteHeader({ variant, adminLogoutAction }: Props) {
   const pathname = usePathname();
+  const flowPathForStep =
+    pathname === "/order/platter" ? "/order/customize" : pathname;
   const stepIndex =
     variant === "flow"
-      ? FLOW_PATHS.indexOf(pathname as (typeof FLOW_PATHS)[number])
+      ? FLOW_PATHS.indexOf(flowPathForStep as (typeof FLOW_PATHS)[number])
       : -1;
-  const showSteps = stepIndex >= 0;
+  const showSteps = variant === "flow" && stepIndex >= 0;
 
   const logoClass =
     variant === "marketing"
@@ -67,6 +71,27 @@ export function SiteHeader({ variant }: Props) {
             >
               Order
             </Link>
+          ) : variant === "admin" ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-full px-3 py-1.5 font-sans text-[11px] font-medium text-order-muted transition hover:bg-order-brown/5 hover:text-order-brownInk"
+              >
+                View site
+              </Link>
+              {adminLogoutAction &&
+              pathname &&
+              !pathname.startsWith("/admin/login") ? (
+                <form action={adminLogoutAction}>
+                  <button
+                    type="submit"
+                    className="rounded-full px-3 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-wide text-order-taupe transition hover:bg-order-brown/5 hover:text-order-brownInk"
+                  >
+                    Log out
+                  </button>
+                </form>
+              ) : null}
+            </div>
           ) : (
             <>
               <Link

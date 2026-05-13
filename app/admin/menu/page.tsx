@@ -1,11 +1,17 @@
-import { MenuSection } from "@/components/admin/menu-section";
+import { MenuProductsClient } from "@/components/admin/menu-products-client";
 import { compareToppingCategory } from "@/lib/order/menu-categories";
 import { prisma } from "@/lib/db";
 import {
+  createStack,
   createExtra,
   createTopping,
+  deleteStack,
+  deleteExtra,
+  deleteTopping,
+  setStackAvailable,
   setExtraAvailable,
   setToppingAvailable,
+  updateStack,
   updateExtra,
   updateTopping,
 } from "./actions";
@@ -13,7 +19,18 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function AdminMenuPage() {
-  const [toppingsRaw, extras] = await Promise.all([
+  const [stacksRaw, toppingsRaw, extrasRaw] = await Promise.all([
+    prisma.stack.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        kind: true,
+        price: true,
+        available: true,
+        description: true,
+      },
+    }),
     prisma.topping.findMany({
       select: {
         id: true,
@@ -21,9 +38,19 @@ export default async function AdminMenuPage() {
         price: true,
         category: true,
         available: true,
+        description: true,
       },
     }),
-    prisma.extra.findMany({ orderBy: { name: "asc" } }),
+    prisma.extra.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        available: true,
+        description: true,
+      },
+    }),
   ]);
 
   const toppings = [...toppingsRaw].sort(
@@ -31,38 +58,30 @@ export default async function AdminMenuPage() {
       compareToppingCategory(a.category, b.category) ||
       a.name.localeCompare(b.name),
   );
+  const stacks = stacksRaw.map((s) => ({
+    ...s,
+    kind: (s.kind === "platter" ? "platter" : "pancake") as
+      | "pancake"
+      | "platter",
+  }));
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-          Menu add-ons
-        </h2>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Glazing, toppings, syrups, and drinks—same sections as the printed
-          menu. Toggle availability anytime.
-        </p>
-      </div>
-
-      <MenuSection
-        title="Glazing · Topping · Syrup · Drinks"
-        description="Items appear on the customer customize step, grouped by section."
-        kind="topping"
-        items={toppings}
-        createAction={createTopping}
-        updateAction={updateTopping}
-        setAvailable={setToppingAvailable}
-      />
-
-      <MenuSection
-        title="Extras"
-        description="Other add-ons (optional)."
-        kind="extra"
-        items={extras}
-        createAction={createExtra}
-        updateAction={updateExtra}
-        setAvailable={setExtraAvailable}
-      />
-    </div>
+    <MenuProductsClient
+      stacks={stacks}
+      toppings={toppings}
+      extras={extrasRaw}
+      createStack={createStack}
+      updateStack={updateStack}
+      deleteStack={deleteStack}
+      setStackAvailable={setStackAvailable}
+      createTopping={createTopping}
+      updateTopping={updateTopping}
+      deleteTopping={deleteTopping}
+      setToppingAvailable={setToppingAvailable}
+      createExtra={createExtra}
+      updateExtra={updateExtra}
+      deleteExtra={deleteExtra}
+      setExtraAvailable={setExtraAvailable}
+    />
   );
 }
