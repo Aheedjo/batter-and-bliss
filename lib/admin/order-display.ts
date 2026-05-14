@@ -64,15 +64,24 @@ export type TodayOrderStrip = {
 };
 
 export function computeTodayStrip(
-  orders: Pick<AdminOrderListItem, "placedAt" | "status">[],
+  orders: Pick<AdminOrderListItem, "placedAt" | "updatedAt" | "status">[],
   nowMs: number,
 ): TodayOrderStrip {
   const day0 = startOfLocalDay(new Date(nowMs));
-  const today = orders.filter((o) => startOfLocalDay(new Date(o.placedAt)) === day0);
+  const now = new Date(nowMs);
+  const placedToday = orders.filter(
+    (o) => startOfLocalDay(new Date(o.placedAt)) === day0,
+  );
   return {
-    pending: today.filter((o) => o.status === "pending").length,
-    confirmed: today.filter((o) => o.status === "confirmed").length,
-    rejected: today.filter((o) => o.status === "rejected").length,
+    pending: placedToday.filter((o) => o.status === "pending").length,
+    confirmed: orders.filter(
+      (o) =>
+        o.status === "confirmed" && isSameLocalDay(new Date(o.updatedAt), now),
+    ).length,
+    rejected: orders.filter(
+      (o) =>
+        o.status === "rejected" && isSameLocalDay(new Date(o.updatedAt), now),
+    ).length,
   };
 }
 
