@@ -59,7 +59,7 @@ function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
     return (
       <div className="mt-5 rounded-2xl bg-emerald-50/90 px-4 py-3 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:ring-emerald-800/50">
         <p className="font-sans text-sm font-medium text-emerald-950 dark:text-emerald-100">
-          You&apos;re confirmed — we&apos;re preparing and dispatching your order.
+          You&apos;re confirmed — your order is in this kitchen day&apos;s run.
         </p>
         {order.etaLabel ? (
           <p className="mt-2 font-serif text-base font-semibold text-emerald-950 dark:text-emerald-50">
@@ -67,8 +67,8 @@ function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
           </p>
         ) : null}
         <p className="mt-2 font-sans text-[12px] leading-snug text-emerald-800/90 dark:text-emerald-200/85">
-          Typical delivery is 60–120 mins from payment confirmation, based on
-          prep queue and rider availability.
+          Handoff depends on prep queue and rider routing; we&apos;ll message you
+          if anything changes.
         </p>
       </div>
     );
@@ -88,8 +88,9 @@ function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
               {order.etaLabel}
             </p>
             <p className="mt-1 font-sans text-[11px] leading-snug text-order-taupe">
-              We confirm payment first, then prep and book your rider. Typical
-              delivery is 60–120 mins from confirmation.
+              We confirm your transfer, then slot prep and delivery into this
+              kitchen day. If a window is shown above, treat it as an estimate—
+              traffic and batch load can shift it slightly.
             </p>
           </div>
         </div>

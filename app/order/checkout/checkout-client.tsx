@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMemo, useEffect, useState, useTransition } from "react";
+import { useMemo, useEffect, useState, useTransition, useCallback } from "react";
 import { createCheckoutOrder } from "@/app/order/checkout/actions";
 import { FlowNavBack } from "@/components/brand/flow-nav-back";
 import { SectionHeading } from "@/components/brand/section-heading";
@@ -33,6 +33,18 @@ const btnPrimary =
   "flex w-full items-center justify-center gap-2 rounded-full bg-order-brownBtn py-[1.05rem] font-serif text-[15px] font-semibold tracking-[0.01em] text-white shadow-order-btn ring-1 ring-order-brownBtn/20 transition hover:brightness-110 active:scale-[0.99]";
 
 const cardRing = "ring-1 ring-black/[0.05]";
+
+const nudgeRing =
+  "ring-2 ring-order-brownBtn/45 ring-offset-2 ring-offset-order-bg shadow-[0_0_0_4px_rgba(139,90,60,0.12)] transition-shadow duration-300";
+
+type NudgeField =
+  | "intake"
+  | "cap"
+  | "delivery"
+  | "placer"
+  | "phone"
+  | "payer"
+  | null;
 
 type Props = {
   toppings: PublicTopping[];
@@ -95,6 +107,7 @@ export function CheckoutClient({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [placing, startTransition] = useTransition();
+  const [nudgeField, setNudgeField] = useState<NudgeField>(null);
 
   const catalog = useMemo(
     () =>
@@ -168,6 +181,69 @@ export function CheckoutClient({
     !atDailyCap &&
     !intakeBlocked;
 
+  useEffect(() => {
+    if (!nudgeField) return;
+    const id = window.setTimeout(() => setNudgeField(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [nudgeField]);
+
+  const scrollToAndFocus = useCallback((elementId: string) => {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement
+    ) {
+      window.setTimeout(() => {
+        el.focus({ preventScroll: true });
+      }, 320);
+    }
+  }, []);
+
+  /** When checkout can’t submit yet, jump to the first problem (top → bottom). */
+  const nudgeFirstCheckoutIssue = useCallback(() => {
+    setOrderError(null);
+    if (intakeBlocked) {
+      setNudgeField("intake");
+      scrollToAndFocus("checkout-section-intake");
+      return;
+    }
+    if (atDailyCap) {
+      setNudgeField("cap");
+      scrollToAndFocus("checkout-section-cap");
+      return;
+    }
+    if (!deliveryOk) {
+      setNudgeField("delivery");
+      scrollToAndFocus("checkout-delivery");
+      return;
+    }
+    if (!placerOk) {
+      setNudgeField("placer");
+      scrollToAndFocus("checkout-placer");
+      return;
+    }
+    if (!phoneOk) {
+      setNudgeField("phone");
+      scrollToAndFocus("checkout-phone");
+      return;
+    }
+    if (payerNameEffective.length < 2) {
+      setNudgeField("payer");
+      scrollToAndFocus("checkout-payer");
+    }
+  }, [
+    atDailyCap,
+    deliveryOk,
+    intakeBlocked,
+    payerNameEffective.length,
+    phoneOk,
+    placerOk,
+    scrollToAndFocus,
+  ]);
+
   function placeOrder() {
     if (!canPlace || placing) return;
     setIsSubmittingOrder(true);
@@ -195,6 +271,11 @@ export function CheckoutClient({
       if (!res.ok) {
         setOrderError(res.message);
         setIsSubmittingOrder(false);
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById("checkout-order-error")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
         return;
       }
       setOrderError(null);
@@ -221,6 +302,15 @@ export function CheckoutClient({
     });
   }
 
+  function handlePlaceOrderClick() {
+    if (placing) return;
+    if (!canPlace) {
+      nudgeFirstCheckoutIssue();
+      return;
+    }
+    placeOrder();
+  }
+
   return (
     <>
       <div className="mx-auto max-w-lg px-5 pb-40 pt-8 sm:px-6 sm:pt-10">
@@ -234,7 +324,10 @@ export function CheckoutClient({
 
         {intakeBlocked && intake.blockedMessage ? (
           <div
-            className="mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50"
+            id="checkout-section-intake"
+            className={`mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
+              nudgeField === "intake" ? nudgeRing : ""
+            }`}
             role="status"
           >
             <p className="font-sans text-sm font-semibold text-amber-950 dark:text-amber-50">
@@ -263,7 +356,10 @@ export function CheckoutClient({
 
         {atDailyCap ? (
           <div
-            className="mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50"
+            id="checkout-section-cap"
+            className={`mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
+              nudgeField === "cap" ? nudgeRing : ""
+            }`}
             role="status"
           >
             <p className="font-sans text-sm font-semibold text-amber-950 dark:text-amber-50">
@@ -348,7 +444,11 @@ export function CheckoutClient({
         </div>
 
         <Subheading kicker="Delivery" title={"Where we're bringing it"} />
-        <div className="mt-4 rounded-[1.25rem] bg-order-card p-4 shadow-soft ring-1 ring-order-line/50">
+        <div
+          className={`mt-4 rounded-[1.25rem] bg-order-card p-4 shadow-soft ring-1 ring-order-line/50 ${
+            nudgeField === "delivery" ? nudgeRing : ""
+          }`}
+        >
           <label
             htmlFor="checkout-delivery"
             className="font-sans text-[11px] font-semibold uppercase tracking-wide text-order-muted"
@@ -391,7 +491,7 @@ export function CheckoutClient({
               value={placedByName}
               onChange={(e) => setPlacedByName(e.target.value)}
               placeholder="e.g. Aisha Bello"
-              className={inputClass}
+              className={`${inputClass} ${nudgeField === "placer" ? nudgeRing : ""}`}
             />
           </div>
           <div>
@@ -415,7 +515,7 @@ export function CheckoutClient({
               onChange={(e) => setBuyerPhone(e.target.value)}
               placeholder="e.g. 0803 000 0000"
               maxLength={28}
-              className={inputClass}
+              className={`${inputClass} ${nudgeField === "phone" ? nudgeRing : ""}`}
             />
           </div>
           <div>
@@ -476,7 +576,9 @@ export function CheckoutClient({
               value={payerSameAsPlacer ? placedByName : expectedBankSenderName}
               onChange={(e) => setExpectedBankSenderName(e.target.value)}
               placeholder="e.g. Chidi Okafor"
-              className={`${inputClass} ${payerSameAsPlacer ? "opacity-70" : ""}`}
+              className={`${inputClass} ${payerSameAsPlacer ? "opacity-70" : ""} ${
+                nudgeField === "payer" && !payerSameAsPlacer ? nudgeRing : ""
+              }`}
             />
           </div>
         </div>
@@ -488,9 +590,11 @@ export function CheckoutClient({
           className="mt-4"
         />
         <p className="mt-3 rounded-2xl bg-order-bg px-3 py-2.5 font-sans text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
-          Delivery starts after payment confirmation. Typical arrival is{" "}
-          <span className="font-semibold text-order-brownInk">60–120 mins</span>,
-          depending on kitchen queue, rider availability, and traffic/weather.
+          We work in{" "}
+          <span className="font-semibold text-order-brownInk">kitchen-day</span>{" "}
+          batches, not on-demand minutes from payment. After your transfer is
+          verified, we prep and deliver as part of that day&apos;s run—handoff
+          time depends on our queue and riders.
         </p>
         <p className="relative mt-3 rounded-2xl bg-order-bg py-2.5 pl-9 pr-3 font-sans text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
           <span className="absolute left-3 top-2.5 text-order-muted" aria-hidden>
@@ -515,6 +619,7 @@ export function CheckoutClient({
         </p>
         {orderError ? (
           <p
+            id="checkout-order-error"
             className="mt-3 rounded-xl border border-red-200/80 bg-red-50 px-3 py-2 text-sm text-red-800"
             role="alert"
           >
@@ -537,9 +642,13 @@ export function CheckoutClient({
         ) : null}
         <button
           type="button"
-          onClick={placeOrder}
-          disabled={!canPlace || placing}
-          className={`${btnPrimary} ${!canPlace || placing ? "pointer-events-none opacity-50" : ""}`}
+          onClick={handlePlaceOrderClick}
+          disabled={placing}
+          aria-busy={placing}
+          aria-disabled={!canPlace && !placing}
+          className={`${btnPrimary} ${
+            placing ? "pointer-events-none opacity-60" : ""
+          } ${!canPlace && !placing ? "opacity-90" : ""}`}
         >
           {placing ? "Placing…" : "Place order"}
           <span aria-hidden className="text-lg font-light">
