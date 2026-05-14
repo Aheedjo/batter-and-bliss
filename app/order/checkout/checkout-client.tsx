@@ -325,7 +325,7 @@ export function CheckoutClient({
         {intakeBlocked && intake.blockedMessage ? (
           <div
             id="checkout-section-intake"
-            className={`mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
+            className={`mt-5 rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2.5 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
               nudgeField === "intake" ? nudgeRing : ""
             }`}
             role="status"
@@ -333,23 +333,8 @@ export function CheckoutClient({
             <p className="font-sans text-sm font-semibold text-amber-950 dark:text-amber-50">
               Orders aren&apos;t open
             </p>
-            <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-amber-900/90 dark:text-amber-100/85">
+            <p className="mt-1 font-sans text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-100/85">
               {intake.blockedMessage}
-            </p>
-          </div>
-        ) : null}
-
-        {!intakeBlocked && intake.orderForDayLabel ? (
-          <div
-            className="mt-6 rounded-[1.25rem] border border-emerald-200/90 bg-emerald-50/90 px-4 py-3 shadow-soft ring-1 ring-emerald-100/80 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:ring-emerald-900/40"
-            role="status"
-          >
-            <p className="font-sans text-[12px] leading-relaxed text-emerald-950 dark:text-emerald-50/95">
-              This order is for{" "}
-              <span className="font-semibold text-order-brownInk dark:text-emerald-50">
-                {intake.orderForDayLabel}
-              </span>
-              —that&apos;s the kitchen day you&apos;re booking for.
             </p>
           </div>
         ) : null}
@@ -357,38 +342,22 @@ export function CheckoutClient({
         {atDailyCap ? (
           <div
             id="checkout-section-cap"
-            className={`mt-6 rounded-[1.25rem] border border-amber-200/90 bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
+            className={`mt-5 rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2.5 shadow-soft ring-1 ring-amber-100/90 dark:border-amber-800/70 dark:bg-amber-950/35 dark:ring-amber-900/50 ${
               nudgeField === "cap" ? nudgeRing : ""
             }`}
             role="status"
           >
             <p className="font-sans text-sm font-semibold text-amber-950 dark:text-amber-50">
-              We&apos;ve reached today&apos;s order capacity
+              Order window is full
             </p>
-            <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-amber-900/90 dark:text-amber-100/85">
-              We can&apos;t take more orders in this 6am–6am shop period right now.
-              Try again after the next window opens or contact Batter &amp; Bliss if you need help.
+            <p className="mt-1 font-sans text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-100/85">
+              Try again after the next opening or message us—we can&apos;t take more
+              payment reports in this shop period.
             </p>
           </div>
         ) : null}
 
-        <div className="mt-8 rounded-[1.25rem] border border-order-line/70 bg-order-bg px-4 py-3 shadow-soft ring-1 ring-black/[0.03]">
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-order-muted">
-            Payments &amp; refunds
-          </p>
-          <p className="mt-2 font-sans text-[11px] leading-relaxed text-order-taupe">
-            Orders are verified manually against your transfer. Send the{" "}
-            <span className="font-medium text-order-brownDark">
-              exact amount shown
-            </span>{" "}
-            and reference we give you. Tap &quot;I&apos;ve sent the transfer&quot;
-            on your order status after paying. If you paid too much or need a
-            refund, contact us with your BB reference—refunds aren&apos;t
-            instant and follow normal bank timelines once we confirm details.
-          </p>
-        </div>
-
-        <Subheading kicker="Review" title="Order summary" className="mt-10" />
+        <Subheading kicker="Review" title="Order summary" className="mt-8" />
         <div className={`mt-4 rounded-[1.75rem] bg-order-card p-5 shadow-card ${cardRing}`}>
           <ul className="space-y-4">
             {summaryLines.map((item, i) => (
@@ -584,29 +553,34 @@ export function CheckoutClient({
         </div>
 
         <Subheading kicker="Pay" title="Transfer details" />
+        {!intakeBlocked && !atDailyCap ? (
+          <div className="mt-3 rounded-xl border border-order-line/70 bg-order-bg/95 px-3 py-2.5 text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
+            {intake.orderForDayLabel ? (
+              <p className="font-sans text-order-brownInk">
+                <span className="text-order-muted">Kitchen day</span>{" "}
+                <span className="font-semibold">{intake.orderForDayLabel}</span>
+              </p>
+            ) : null}
+            <p className={intake.orderForDayLabel ? "mt-1.5" : ""}>
+              Use the{" "}
+              <span className="font-medium text-order-brownInk">exact total</span>{" "}
+              and{" "}
+              <span className="font-medium text-order-brownInk">BB reference</span>{" "}
+              here, then on{" "}
+              <span className="font-medium text-order-brownInk">order status</span>{" "}
+              tap{" "}
+              <span className="font-medium text-order-brownInk">
+                I&apos;ve sent the transfer
+              </span>
+              . Refunds: contact us with your BB reference.
+            </p>
+          </div>
+        ) : null}
         <BankTransferPanel
           reference={orderReference}
           amount={total}
           className="mt-4"
         />
-        <p className="mt-3 rounded-2xl bg-order-bg px-3 py-2.5 font-sans text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
-          We work in{" "}
-          <span className="font-semibold text-order-brownInk">kitchen-day</span>{" "}
-          batches, not on-demand minutes from payment. After your transfer is
-          verified, we prep and deliver as part of that day&apos;s run—handoff
-          time depends on our queue and riders.
-        </p>
-        <p className="relative mt-3 rounded-2xl bg-order-bg py-2.5 pl-9 pr-3 font-sans text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
-          <span className="absolute left-3 top-2.5 text-order-muted" aria-hidden>
-            ⓘ
-          </span>
-          After you pay, place this order, then open your order status and tap{" "}
-          <span className="font-medium text-order-brownInk">
-            I&apos;ve sent the transfer
-          </span>{" "}
-          once (only counted once per order). If orders are mistakenly rejected,
-          capacity frees up automatically for others.
-        </p>
         <p className="mt-2 font-sans text-[11px] leading-snug text-order-muted">
           By placing an order, you agree to our{" "}
           <Link
