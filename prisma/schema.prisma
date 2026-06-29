@@ -16,6 +16,8 @@ model Topping {
   category    String   @default("topping")
   price       Float?
   description String?
+  /// Public URL (Vercel Blob or /uploads in local dev).
+  imageUrl    String?
   available   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -38,6 +40,8 @@ model Stack {
   kind        String   @default("pancake")
   price       Float?
   description String?
+  /// Public URL (Vercel Blob or /uploads in local dev).
+  imageUrl    String?
   available   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

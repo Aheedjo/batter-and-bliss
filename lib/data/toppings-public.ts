@@ -36,7 +36,7 @@ export const getAvailableToppings = cache(async function getAvailableToppings():
     async () => {
       const rows = await prisma.topping.findMany({
         where: { available: true },
-        select: { id: true, name: true, price: true, category: true },
+        select: { id: true, name: true, price: true, category: true, imageUrl: true },
       });
       rows.sort(
         (a: PublicTopping, b: PublicTopping) =>
@@ -58,7 +58,7 @@ export const getAvailableToppingsByCategory = cache(
       prisma.topping.findMany({
         where: { available: true, category },
         orderBy: { name: "asc" },
-        select: { id: true, name: true, price: true, category: true },
+        select: { id: true, name: true, price: true, category: true, imageUrl: true },
       }),
     () => getFallbackToppingsByCategory(category),
   );

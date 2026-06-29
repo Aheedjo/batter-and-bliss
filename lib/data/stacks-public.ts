@@ -36,7 +36,7 @@ export const getAvailableStacks = cache(async function getAvailableStacks(
     const rows = await prisma.stack.findMany({
       where: { available: true, ...(kind ? { kind } : {}) },
       orderBy: { name: "asc" },
-      select: { id: true, kind: true, name: true, price: true, description: true },
+      select: { id: true, kind: true, name: true, price: true, description: true, imageUrl: true },
     });
     if (rows.length === 0) {
       const fallback = fallbackStacks();
@@ -53,6 +53,7 @@ export const getAvailableStacks = cache(async function getAvailableStacks(
           row.description ??
           (fallback && "subtitle" in fallback ? fallback.subtitle : undefined),
         image:
+          row.imageUrl ??
           fallback?.image ??
           "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=85&auto=format&fit=crop",
         alt:

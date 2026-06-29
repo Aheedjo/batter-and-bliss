@@ -6,6 +6,8 @@ import { useCallback, useMemo, useState } from "react";
 import type { ActionState } from "@/app/admin/menu/actions";
 import { ItemEditorSheet, type MenuEditorItem, type MenuKind } from "./item-editor-sheet";
 import { MenuProductCard } from "./menu-product-card";
+import { toppingImageUrl } from "@/lib/order/topping-image";
+import { STACKS } from "@/lib/order/stacks";
 
 export type MenuStackRow = {
   id: string;
@@ -14,6 +16,7 @@ export type MenuStackRow = {
   price: number | null;
   available: boolean;
   description: string | null;
+  imageUrl: string | null;
 };
 
 export type MenuToppingRow = {
@@ -23,6 +26,7 @@ export type MenuToppingRow = {
   category: string;
   available: boolean;
   description: string | null;
+  imageUrl: string | null;
 };
 
 export type MenuExtraRow = {
@@ -87,6 +91,18 @@ const TOPPING_TAB_CATEGORIES = [
   "platter_topping",
   "syrup",
 ] as const;
+
+function stackPreviewImage(row: MenuStackRow) {
+  if (row.imageUrl) return row.imageUrl;
+  const match = STACKS.find(
+    (s) => s.name.trim().toLowerCase() === row.name.trim().toLowerCase(),
+  );
+  return match?.image ?? null;
+}
+
+function toppingPreviewImage(row: MenuToppingRow) {
+  return row.imageUrl ?? toppingImageUrl(row.name);
+}
 
 function matchesSearch(name: string, q: string) {
   if (!q.trim()) return true;
@@ -232,6 +248,7 @@ export function MenuProductsClient({
         available: row.available,
         category: row.kind,
         description: row.description,
+        imageUrl: row.imageUrl,
       },
       defaultCategory: row.kind,
     });
@@ -250,6 +267,7 @@ export function MenuProductsClient({
         available: row.available,
         category: row.category,
         description: row.description,
+        imageUrl: row.imageUrl,
       },
       defaultCategory: row.category,
     });
@@ -435,6 +453,8 @@ export function MenuProductsClient({
                 name={s.name}
                 price={s.price}
                 available={s.available}
+                imageUrl={stackPreviewImage(s)}
+                imageAlt={s.name}
                 onEdit={() => openEditStack(s)}
                 onToggleAvailable={refreshToggleStack}
               />
@@ -454,6 +474,8 @@ export function MenuProductsClient({
                 name={s.name}
                 price={s.price}
                 available={s.available}
+                imageUrl={stackPreviewImage(s)}
+                imageAlt={s.name}
                 onEdit={() => openEditStack(s)}
                 onToggleAvailable={refreshToggleStack}
               />
@@ -473,6 +495,8 @@ export function MenuProductsClient({
                 name={row.name}
                 price={row.price}
                 available={row.available}
+                imageUrl={toppingPreviewImage(row)}
+                imageAlt={row.name}
                 onEdit={() => openEditTopping(row)}
                 onToggleAvailable={refreshToggleTopping}
               />
@@ -492,6 +516,8 @@ export function MenuProductsClient({
                 name={row.name}
                 price={row.price}
                 available={row.available}
+                imageUrl={toppingPreviewImage(row)}
+                imageAlt={row.name}
                 onEdit={() => openEditTopping(row)}
                 onToggleAvailable={refreshToggleTopping}
               />

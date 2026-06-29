@@ -27,6 +27,8 @@ prisma/*.db-journal
 .turbo
 coverage
 .vercel
+public/uploads/menu/*
+!public/uploads/menu/.gitkeep
 
 # editor
 .idea

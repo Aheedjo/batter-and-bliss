@@ -3,11 +3,22 @@
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { revalidateMenuPages } from "@/lib/admin/revalidate-menu";
 import { prisma } from "@/lib/db";
+import { parseOptionalImageUrl } from "@/lib/validations/image-url";
 import { cuidSchema } from "@/lib/validations/ids";
 import { menuItemFormSchema } from "@/lib/validations/menu";
 
 const path = "/admin/menu";
+
+function parseImageUrl(formData: FormData) {
+  return parseOptionalImageUrl(formData.get("imageUrl"));
+}
+
+function revalidateMenu() {
+  revalidateMenuPages();
+  revalidatePath(path);
+}
 
 const toppingCategorySchema = z.enum([
   "glazing",
@@ -59,6 +70,7 @@ export async function createTopping(
     return fail(first);
   }
   const category = parseToppingCategory(formData);
+  const imageUrl = parseImageUrl(formData);
   try {
     await prisma.topping.create({
       data: {
@@ -66,6 +78,7 @@ export async function createTopping(
         price: parsed.data.price,
         category,
         description: parsed.data.description,
+        imageUrl,
         available: true,
       },
     });
@@ -73,7 +86,7 @@ export async function createTopping(
     console.error(e);
     return fail("Could not create topping.");
   }
-  revalidatePath(path);
+  revalidateMenu();
   return { ok: true };
 }
 
@@ -96,6 +109,7 @@ export async function updateTopping(
     return fail(first);
   }
   const category = parseToppingCategory(formData);
+  const imageUrl = parseImageUrl(formData);
   try {
     await prisma.topping.update({
       where: { id: idParsed.data },
@@ -104,6 +118,7 @@ export async function updateTopping(
         price: parsed.data.price,
         category,
         description: parsed.data.description,
+        imageUrl,
       },
     });
   } catch (e) {
@@ -111,7 +126,7 @@ export async function updateTopping(
     console.error(e);
     return fail("Could not update topping.");
   }
-  revalidatePath(path);
+  revalidateMenu();
   return { ok: true };
 }
 
@@ -164,6 +179,7 @@ export async function createStack(
     return fail(first);
   }
   const kind = parseStackKind(formData);
+  const imageUrl = parseImageUrl(formData);
   try {
     await prisma.stack.create({
       data: {
@@ -171,6 +187,7 @@ export async function createStack(
         kind,
         price: parsed.data.price,
         description: parsed.data.description,
+        imageUrl,
         available: true,
       },
     });
@@ -178,7 +195,7 @@ export async function createStack(
     console.error(e);
     return fail("Could not create stack.");
   }
-  revalidatePath(path);
+  revalidateMenu();
   return { ok: true };
 }
 
@@ -201,6 +218,7 @@ export async function updateStack(
     return fail(first);
   }
   const kind = parseStackKind(formData);
+  const imageUrl = parseImageUrl(formData);
   try {
     await prisma.stack.update({
       where: { id: idParsed.data },
@@ -209,6 +227,7 @@ export async function updateStack(
         kind,
         price: parsed.data.price,
         description: parsed.data.description,
+        imageUrl,
       },
     });
   } catch (e) {
@@ -216,7 +235,7 @@ export async function updateStack(
     console.error(e);
     return fail("Could not update stack.");
   }
-  revalidatePath(path);
+  revalidateMenu();
   return { ok: true };
 }
 

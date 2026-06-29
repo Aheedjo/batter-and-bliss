@@ -3,4 +3,5 @@ export type PublicTopping = {
   name: string;
   price: number | null;
   category: string;
+  imageUrl?: string | null;
 };

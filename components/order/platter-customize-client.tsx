@@ -102,6 +102,7 @@ export function PlatterCustomizeClient({
                   <ToppingGridCard
                     name={t.name}
                     price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
                     selected={line.addOnIds.includes(t.id)}
                     onToggle={() =>
                       toggleExclusiveAddOnGroup(glazingIds, t.id)
@@ -125,6 +126,7 @@ export function PlatterCustomizeClient({
                   <ToppingGridCard
                     name={t.name}
                     price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
                     selected={line.addOnIds.includes(t.id)}
                     onToggle={() => toggleLineAddOn(t.id)}
                   />

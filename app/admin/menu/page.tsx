@@ -29,6 +29,7 @@ export default async function AdminMenuPage() {
         price: true,
         available: true,
         description: true,
+        imageUrl: true,
       },
     }),
     prisma.topping.findMany({
@@ -39,6 +40,7 @@ export default async function AdminMenuPage() {
         category: true,
         available: true,
         description: true,
+        imageUrl: true,
       },
     }),
     prisma.extra.findMany({

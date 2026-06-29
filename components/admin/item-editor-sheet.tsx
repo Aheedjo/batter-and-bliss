@@ -1,10 +1,11 @@
 "use client";
 
-import { ImagePlus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import type { ActionState } from "@/app/admin/menu/actions";
+import { MenuImageField } from "@/components/admin/menu-image-field";
 import {
   TOPPING_CATEGORIES,
   labelForToppingCategory,
@@ -20,6 +21,7 @@ export type MenuEditorItem = {
   available: boolean;
   category?: string;
   description?: string | null;
+  imageUrl?: string | null;
 };
 
 type Props = {
@@ -174,23 +176,13 @@ export function ItemEditorSheet({
               <input type="hidden" name="id" value={item.id} />
             ) : null}
 
-            <div className="flex flex-col gap-2">
-              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-order-taupe">
-                Image
-              </span>
-              <button
-                type="button"
-                disabled
-                className="relative flex aspect-[16/10] w-full cursor-not-allowed flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-order-line/90 bg-order-bg/70 text-order-muted"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-order-line/50">
-                  <ImagePlus className="h-6 w-6" strokeWidth={1.5} aria-hidden />
-                </span>
-                <span className="rounded-full bg-white/90 px-3 py-1 font-sans text-xs font-medium text-order-taupe ring-1 ring-order-line/40">
-                  Photo upload soon
-                </span>
-              </button>
-            </div>
+            {kind === "stack" || kind === "topping" ? (
+              <MenuImageField
+                key={`${mode}-${item?.id ?? "new"}-${item?.imageUrl ?? ""}`}
+                initialUrl={item?.imageUrl}
+                itemName={item?.name}
+              />
+            ) : null}
 
             <div className="flex flex-col gap-2">
               <label

@@ -118,6 +118,7 @@ export function CustomizeAllClient({ stacks, glazing, toppings, syrups }: Props)
                   <ToppingGridCard
                     name={t.name}
                     price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
                     selected={!line.randomBliss && line.addOnIds.includes(t.id)}
                     onToggle={() =>
                       toggleExclusiveAddOnGroup(glazingIds, t.id)
@@ -141,6 +142,7 @@ export function CustomizeAllClient({ stacks, glazing, toppings, syrups }: Props)
                   <ToppingGridCard
                     name={t.name}
                     price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
                     selected={!line.randomBliss && line.addOnIds.includes(t.id)}
                     onToggle={() => toggleLineAddOn(t.id)}
                   />
@@ -162,6 +164,7 @@ export function CustomizeAllClient({ stacks, glazing, toppings, syrups }: Props)
                   <ToppingGridCard
                     name={t.name}
                     price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
                     selected={!line.randomBliss && line.addOnIds.includes(t.id)}
                     onToggle={() => toggleLineAddOn(t.id)}
                   />
