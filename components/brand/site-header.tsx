@@ -9,7 +9,6 @@ const FLOW_PATHS = [
   "/order/customize",
   "/order/builds",
   "/order/drinks",
-  "/order/note",
   "/order/checkout",
 ] as const;
 

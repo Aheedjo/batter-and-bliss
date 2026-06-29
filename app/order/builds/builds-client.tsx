@@ -110,7 +110,7 @@ export function BuildsClient({ catalog, stacks }: Props) {
                       className="rounded-full border border-order-line/80 px-3 py-1.5 font-sans text-[11px] font-medium text-order-brownInk transition hover:bg-order-bg"
                       onClick={() => {
                         setEditingLineId(line.id);
-                        router.push("/order/stack");
+                        router.push("/order/stack?edit=base");
                       }}
                     >
                       Change package

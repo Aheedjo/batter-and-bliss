@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SectionHeading } from "@/components/brand/section-heading";
 import { StackCard } from "@/components/order/stack-card";
 import { StickyAction } from "@/components/order/sticky-action";
@@ -28,8 +28,11 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
   const addPancakeLine = useOrderStore((s) => s.addPancakeLine);
   const updateLineStack = useOrderStore((s) => s.updateLineStack);
   const setEditingLineId = useOrderStore((s) => s.setEditingLineId);
+  const clearPancakeCart = useOrderStore((s) => s.clearPancakeCart);
 
   const editingLine = pancakeLines.find((l) => l.id === editingLineId);
+  /** From builds “Change package” only — not in-flow stack pick / back from customize. */
+  const changeBaseMode = searchParams.get("edit") === "base";
 
   const pancakeStacks = useMemo(
     () => stacks.filter((s) => s.kind === "pancake"),
@@ -62,8 +65,6 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
     );
   }, [stackParam, editingLine, stacks, sortedPancakes, sortedPlatters]);
 
-  const editingMode = Boolean(editingLineId && editingLine);
-
   const defaultSegment: "pancake" | "platter" = (() => {
     if (pancakeStacks.length === 0) return "platter";
     if (platterStacks.length === 0) return "pancake";
@@ -87,6 +88,12 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
 
   const showBothKinds = pancakeStacks.length > 0 && platterStacks.length > 0;
 
+  useEffect(() => {
+    if (!changeBaseMode && pancakeLines.length === 0) {
+      setEditingLineId(null);
+    }
+  }, [changeBaseMode, pancakeLines.length, setEditingLineId]);
+
   function switchSegment(next: "pancake" | "platter") {
     setSegment(next);
     const pool = next === "pancake" ? sortedPancakes : sortedPlatters;
@@ -102,7 +109,7 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
           eyebrow="Choose base"
           title="Pancakes & signature"
           description={
-            editingLine
+            changeBaseMode
               ? "Update the base for this order, then save to return to your review."
               : "Pick a base for a new order. Pancakes include full toppings and syrups; platters use platter glazing and toppings only."
           }
@@ -157,27 +164,36 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
             disabled={!selected}
             onClick={() => {
               if (!selected) return;
-              if (editingLineId && editingLine) {
+              const nextCustomize =
+                selectedStack?.kind === "platter"
+                  ? "/order/platter"
+                  : "/order/customize";
+
+              if (changeBaseMode) {
+                if (!editingLineId || !editingLine) return;
                 updateLineStack(editingLineId, selected);
                 router.push("/order/builds");
                 return;
               }
+
+              if (editingLineId && editingLine) {
+                updateLineStack(editingLineId, selected);
+                router.push(nextCustomize);
+                return;
+              }
+
               addPancakeLine(selected);
-              router.push(
-                selectedStack?.kind === "platter"
-                  ? "/order/platter"
-                  : "/order/customize",
-              );
+              router.push(nextCustomize);
             }}
             className={`${btnPrimary} ${!selected ? "pointer-events-none opacity-50" : ""}`}
           >
-            {editingMode ? "Save base" : "Continue"}
+            {changeBaseMode ? "Save base" : "Continue"}
           </button>
-          {!editingMode && pancakeLines.length === 0 ? (
+          {!changeBaseMode && pancakeLines.length === 0 ? (
             <button
               type="button"
               onClick={() => {
-                setEditingLineId(null);
+                clearPancakeCart();
                 router.push("/order/drinks?only=1");
               }}
               className="w-full rounded-full border border-order-line/90 bg-order-bg py-3 font-sans text-sm font-semibold text-order-brownInk transition hover:bg-order-card"
@@ -194,12 +210,13 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
 export function StackClient({ stacks }: { stacks: PublicStack[] }) {
   const searchParams = useSearchParams();
   const stackParam = searchParams.get("stack");
+  const editParam = searchParams.get("edit");
   const editingLineId = useOrderStore((s) => s.editingLineId);
 
   return (
     <StackClientInner
       stacks={stacks}
-      key={`${stackParam ?? ""}|${editingLineId ?? ""}`}
+      key={`${stackParam ?? ""}|${editParam ?? ""}|${editingLineId ?? ""}`}
     />
   );
 }

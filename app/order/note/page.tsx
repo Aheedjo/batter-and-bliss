@@ -1,5 +1,6 @@
-import { NoteClient } from "./note-client";
+import { redirect } from "next/navigation";
 
-export default function NotePage() {
-  return <NoteClient />;
+/** Legacy route — gift/note is collected on checkout only. */
+export default function OrderNotePage() {
+  redirect("/order/checkout");
 }

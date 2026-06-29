@@ -55,6 +55,8 @@ type OrderState = {
   ) => void;
   setTrackSelectedRef: (ref: string | null) => void;
   pruneStaleActiveOrders: () => void;
+  /** Drops pancake lines only (e.g. “Order drinks only” from stack). */
+  clearPancakeCart: () => void;
   resetOrder: () => void;
 };
 
@@ -245,6 +247,12 @@ export const useOrderStore = create<OrderState>()(
               ? sel
               : (activeOrders[0]?.reference ?? null),
           };
+        }),
+
+      clearPancakeCart: () =>
+        set({
+          pancakeLines: [],
+          editingLineId: null,
         }),
 
       resetOrder: () =>

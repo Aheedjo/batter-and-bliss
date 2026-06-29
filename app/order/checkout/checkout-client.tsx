@@ -151,21 +151,6 @@ export function CheckoutClient({
   const hasDrinks = Object.values(drinkQuantities).some((qty) => qty > 0);
   const hasAnyItems = hasPancakes || hasDrinks;
 
-  useEffect(() => {
-    if (!hasAnyItems && !isSubmittingOrder) router.replace("/order/stack");
-  }, [hasAnyItems, isSubmittingOrder, router]);
-
-  if (!hasAnyItems) return null;
-
-  const stackNameForTrack =
-    !hasPancakes
-      ? "Drinks only order"
-      : pancakeLines.length > 1
-      ? `${pancakeLines.length} pancake orders`
-      : firstStack?.name ?? "Pancake order";
-
-  const customization = detailLines.join(" · ") || "—";
-
   const placerOk = placedByName.trim().length >= 2;
   const payerNameEffective = payerSameAsPlacer
     ? placedByName.trim()
@@ -180,6 +165,10 @@ export function CheckoutClient({
     phoneOk &&
     !atDailyCap &&
     !intakeBlocked;
+
+  useEffect(() => {
+    if (!hasAnyItems && !isSubmittingOrder) router.replace("/order/stack");
+  }, [hasAnyItems, isSubmittingOrder, router]);
 
   useEffect(() => {
     if (!nudgeField) return;
@@ -243,6 +232,17 @@ export function CheckoutClient({
     placerOk,
     scrollToAndFocus,
   ]);
+
+  if (!hasAnyItems) return null;
+
+  const stackNameForTrack =
+    !hasPancakes
+      ? "Drinks only order"
+      : pancakeLines.length > 1
+      ? `${pancakeLines.length} pancake orders`
+      : firstStack?.name ?? "Pancake order";
+
+  const customization = detailLines.join(" · ") || "—";
 
   function placeOrder() {
     if (!canPlace || placing) return;
