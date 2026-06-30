@@ -3,14 +3,28 @@
 import { ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
+import { validateMenuImageFile } from "@/lib/admin/menu-image-shared";
 
 const ACCEPT = "image/jpeg,image/png,image/webp";
-const MAX_BYTES = 5 * 1024 * 1024;
 
 type Props = {
   initialUrl?: string | null;
   itemName?: string;
 };
+
+async function uploadMenuImage(file: File) {
+  const body = new FormData();
+  body.set("file", file);
+  const res = await fetch("/api/admin/menu-image", {
+    method: "POST",
+    body,
+  });
+  const data = (await res.json()) as { url?: string; error?: string };
+  if (!res.ok || !data.url) {
+    throw new Error(data.error ?? "Upload failed. Try again.");
+  }
+  return data.url;
+}
 
 export function MenuImageField({ initialUrl, itemName }: Props) {
   const inputId = useId();
@@ -25,34 +39,25 @@ export function MenuImageField({ initialUrl, itemName }: Props) {
   }, [initialUrl]);
 
   async function onFileChange(file: File | undefined) {
-    if (!file) return;
+    if (!file || uploading) return;
     setError(null);
 
-    if (!ACCEPT.split(",").includes(file.type)) {
-      setError("Use JPG, PNG, or WebP.");
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setError("Image must be 5 MB or smaller.");
+    const validation = validateMenuImageFile(file);
+    if (validation) {
+      setError(validation);
       return;
     }
 
     setUploading(true);
     try {
-      const body = new FormData();
-      body.set("file", file);
-      const res = await fetch("/api/admin/menu-image", {
-        method: "POST",
-        body,
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        setError(data.error ?? "Upload failed. Try again.");
-        return;
-      }
-      setImageUrl(data.url);
-    } catch {
-      setError("Upload failed. Check your connection and try again.");
+      const url = await uploadMenuImage(file);
+      setImageUrl(url);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Upload failed. Check your connection and try again.";
+      setError(message);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -115,7 +120,7 @@ export function MenuImageField({ initialUrl, itemName }: Props) {
               {uploading ? "Uploading…" : "Upload photo"}
             </span>
             <span className="font-sans text-[11px] text-order-muted/90">
-              JPG, PNG, or WebP · up to 5 MB
+              JPG, PNG, or WebP · up to 4 MB
             </span>
           </button>
         )}

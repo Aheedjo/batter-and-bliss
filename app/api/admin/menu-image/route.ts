@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { uploadMenuImageFile } from "@/lib/admin/upload-menu-image";
+import { uploadMenuImageToBlob } from "@/lib/admin/upload-menu-image-blob";
+import { uploadMenuImageToLocalDisk } from "@/lib/admin/upload-menu-image-local";
 import { isAdminRequestAuthorized } from "@/lib/auth/require-admin-request";
 
 export const runtime = "nodejs";
@@ -12,8 +13,12 @@ export async function POST(request: Request) {
   let formData: FormData;
   try {
     formData = await request.formData();
-  } catch {
-    return NextResponse.json({ error: "Invalid upload." }, { status: 400 });
+  } catch (error) {
+    console.error("[menu-image] formData parse failed", error);
+    return NextResponse.json(
+      { error: "Could not read upload. Try a smaller image (under 4 MB)." },
+      { status: 400 },
+    );
   }
 
   const file = formData.get("file");
@@ -21,7 +26,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Choose an image file." }, { status: 400 });
   }
 
-  const result = await uploadMenuImageFile(file);
+  const result = process.env.BLOB_READ_WRITE_TOKEN
+    ? await uploadMenuImageToBlob(file)
+    : await uploadMenuImageToLocalDisk(file);
+
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
