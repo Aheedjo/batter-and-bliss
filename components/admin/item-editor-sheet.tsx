@@ -259,7 +259,7 @@ export function ItemEditorSheet({
               </label>
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-sans text-sm text-order-muted">
-                  $
+                  ₦
                 </span>
                 <input
                   id={`${formId}-price`}
@@ -268,7 +268,7 @@ export function ItemEditorSheet({
                   defaultValue={
                     item?.price != null ? String(item.price) : ""
                   }
-                  className="w-full rounded-xl border border-order-line/90 bg-white py-3 pr-3 pl-7 font-sans text-base text-order-brownInk outline-none transition placeholder:text-order-muted/60 focus:border-order-brownBtn/40 focus:ring-1 focus:ring-order-brownBtn/25"
+                  className="w-full rounded-xl border border-order-line/90 bg-white py-3 pr-3 pl-8 font-sans text-base text-order-brownInk outline-none transition placeholder:text-order-muted/60 focus:border-order-brownBtn/40 focus:ring-1 focus:ring-order-brownBtn/25"
                   placeholder="0"
                 />
               </div>
