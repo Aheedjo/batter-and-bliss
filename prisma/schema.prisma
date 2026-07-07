@@ -57,6 +57,8 @@ model ShopSetting {
   orderIntakeScheduleEnabled Boolean @default(true)
   /// JSON array of JS weekdays 0–6 (Sun–Sat) that are kitchen / fulfilment days—no new orders that shop calendar day.
   serviceWeekdaysJson String @default("[3]")
+  /// Homepage hero image (public URL). Null = use built-in default.
+  heroImageUrl  String?
   updatedAt     DateTime @updatedAt
 }
 

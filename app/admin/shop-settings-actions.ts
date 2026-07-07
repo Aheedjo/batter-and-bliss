@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { serviceWeekdaysToJson } from "@/lib/order/order-intake";
+import { parseOptionalImageUrl } from "@/lib/validations/image-url";
 
 const SETTINGS_ID = "default";
 
@@ -82,5 +83,26 @@ export async function updateOrderIntakeSettings(
   revalidatePath("/admin");
   revalidatePath("/order/checkout");
   revalidatePath("/order", "layout");
+  return { ok: true };
+}
+
+export async function updateHeroImage(
+  _prev: ShopSettingsActionState | undefined,
+  formData: FormData,
+): Promise<ShopSettingsActionState> {
+  const heroImageUrl = parseOptionalImageUrl(formData.get("imageUrl"));
+
+  try {
+    await prisma.shopSetting.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID, dailyOrderCap: null, heroImageUrl },
+      update: { heroImageUrl },
+    });
+  } catch (e) {
+    console.error(e);
+    return fail("Could not save homepage image.");
+  }
+  revalidatePath("/admin");
+  revalidatePath("/");
   return { ok: true };
 }

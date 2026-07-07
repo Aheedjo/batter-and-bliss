@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/media/image-src";
 import { formatPrice } from "@/lib/order/money";
 import { toppingImageUrl } from "@/lib/order/topping-image";
 
@@ -55,6 +56,7 @@ export function ToppingGridCard({
           fill
           className="object-cover"
           sizes="56px"
+          unoptimized={isUploadedImage(src)}
         />
       </div>
       <span className="mt-2 line-clamp-2 px-1 text-center font-serif text-[13px] font-bold leading-snug text-order-brown">

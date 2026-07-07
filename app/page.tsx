@@ -8,6 +8,9 @@ import { MarketingHeading } from "@/components/brand/marketing-heading";
 import { FloatingBrandDecor } from "@/components/brand/floating-brand-decor";
 import { SiteHeader } from "@/components/brand/site-header";
 import { SocialFollowLinks } from "@/components/brand/social-follow-links";
+import { getAvailableStacks } from "@/lib/data/stacks-public";
+import { getHeroImageUrl } from "@/lib/data/site-settings";
+import { isUploadedImage } from "@/lib/media/image-src";
 import { formatPrice } from "@/lib/order/money";
 import type { StackId } from "@/lib/order/stacks";
 
@@ -19,34 +22,54 @@ const IMG = {
     "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80&auto=format&fit=crop",
 } as const;
 
-const featured: readonly {
-  title: string;
+/** Curated homepage picks, matched to live menu items by name so uploaded photos/prices show through. */
+const FEATURED_PICKS: readonly {
+  name: string;
   description: string;
-  price: string;
-  imageSrc: string;
-  imageAlt: string;
-  orderStackId: StackId;
+  fallbackPrice: number;
+  fallbackImage: string;
+  fallbackAlt: string;
+  fallbackStackId: StackId;
 }[] = [
   {
-    title: "~Morado",
+    name: "~Morado",
     description:
       "Signature Dubai Chocolate–inspired pancakes—headliner on our menu.",
-    price: formatPrice(7000),
-    imageSrc: IMG.morado,
-    imageAlt: "Chocolate pancakes stack",
-    orderStackId: "morado",
+    fallbackPrice: 7000,
+    fallbackImage: IMG.morado,
+    fallbackAlt: "Chocolate pancakes stack",
+    fallbackStackId: "morado",
   },
   {
-    title: "Regular Pancakes",
+    name: "Regular Pancakes",
     description: "Classic fluffy stacks—build yours with glazing & toppings.",
-    price: formatPrice(2500),
-    imageSrc: IMG.regular,
-    imageAlt: "Pancakes with berries",
-    orderStackId: "regular",
+    fallbackPrice: 2500,
+    fallbackImage: IMG.regular,
+    fallbackAlt: "Pancakes with berries",
+    fallbackStackId: "regular",
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [stacks, heroImageUrl] = await Promise.all([
+    getAvailableStacks("pancake"),
+    getHeroImageUrl(),
+  ]);
+  const heroSrc = heroImageUrl ?? IMG.hero;
+  const featured = FEATURED_PICKS.map((pick) => {
+    const match = stacks.find(
+      (s) => s.name.trim().toLowerCase() === pick.name.trim().toLowerCase(),
+    );
+    return {
+      title: pick.name,
+      description: pick.description,
+      price: formatPrice(match?.price ?? pick.fallbackPrice),
+      imageSrc: match?.image ?? pick.fallbackImage,
+      imageAlt: match?.alt ?? pick.fallbackAlt,
+      orderStackId: match?.id ?? pick.fallbackStackId,
+    };
+  });
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-brand-bg text-brand-chocolate [color-scheme:light]">
       <FloatingBrandDecor variant="marketing" />
@@ -58,12 +81,13 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-brand-rose/25 via-brand-bgDeep/10 to-white/30" />
             <div className="relative aspect-[4/5] w-full">
         <Image
-                src={IMG.hero}
+                src={heroSrc}
                 alt="Stack of pancakes with fresh berries and syrup"
                 fill
           priority
                 className="object-cover"
                 sizes="(max-width: 512px) 100vw, 512px"
+                unoptimized={isUploadedImage(heroSrc)}
               />
             </div>
           </div>

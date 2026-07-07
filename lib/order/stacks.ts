@@ -56,3 +56,13 @@ export function getStackById(id: StackId | null) {
   if (!id) return null;
   return STACKS.find((s) => s.id === id) ?? null;
 }
+
+/**
+ * Fixed stacks are sold exactly as-is: no glazing, toppings, or syrups.
+ * Currently ~Morado. Matched by name so it works for DB items too.
+ */
+export function isFixedStack(name: string | null | undefined) {
+  if (!name) return false;
+  const normalized = name.trim().toLowerCase().replace(/^~+/, "").trim();
+  return normalized.startsWith("morado");
+}

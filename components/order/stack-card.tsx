@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { isUploadedImage } from "@/lib/media/image-src";
 import { formatPrice } from "@/lib/order/money";
 
 type Stack = {
@@ -33,8 +34,9 @@ export function StackCard({ stack, selected, onSelect }: Props) {
           className="object-cover"
           sizes="(max-width: 448px) 100vw, 448px"
           unoptimized={
-            process.env.NODE_ENV === "development" &&
-            stack.image.startsWith("https://images.unsplash.com/")
+            isUploadedImage(stack.image) ||
+            (process.env.NODE_ENV === "development" &&
+              stack.image.startsWith("https://images.unsplash.com/"))
           }
         />
         <div

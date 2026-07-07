@@ -11,6 +11,7 @@ import { OrderPaymentFollowUp } from "@/components/order/order-payment-follow-up
 import { StickyAction } from "@/components/order/sticky-action";
 import { reportTransferSent } from "@/app/order/checkout/actions";
 import type { PublicStack } from "@/lib/data/stacks-public";
+import { isUploadedImage } from "@/lib/media/image-src";
 import { isActiveOrderVisibleToCustomer } from "@/lib/order/active-order";
 import { formatPrice } from "@/lib/order/money";
 import type { TrackedOrder } from "@/lib/order/tracked-order";
@@ -231,6 +232,7 @@ function ActiveOrderReceipt({
                 fill
                 className="object-cover"
                 sizes="56px"
+                unoptimized={isUploadedImage(stackImage.image)}
               />
             </div>
           ) : null}

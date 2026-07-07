@@ -8,6 +8,7 @@ import { StickyAction } from "@/components/order/sticky-action";
 import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
 import { RANDOM_BLISS_FEE } from "@/lib/order/constants";
+import { isFixedStack } from "@/lib/order/stacks";
 import { formatPrice } from "@/lib/order/money";
 import type { PancakeLine } from "@/lib/order/pancake-types";
 import { useOrderStore } from "@/lib/stores/order-store";
@@ -79,6 +80,7 @@ export function BuildsClient({ catalog, stacks }: Props) {
             {pancakeLines.map((line, i) => {
               const stack = stacksById.get(line.stackId);
               const sub = lineSubtotal(line, stacksById, catalog);
+              const fixed = isFixedStack(stack?.name);
               return (
                 <li
                   key={line.id}
@@ -93,11 +95,13 @@ export function BuildsClient({ catalog, stacks }: Props) {
                         {stack?.name ?? "Pancakes"}
                       </p>
                       <p className="mt-1 font-sans text-[12px] text-order-taupe">
-                        {line.randomBliss
-                          ? "Random Bliss"
-                          : line.addOnIds.length
-                            ? `${line.addOnIds.length} add-on(s)`
-                            : "No add-ons yet"}
+                        {fixed
+                          ? "Served as-is"
+                          : line.randomBliss
+                            ? "Random Bliss"
+                            : line.addOnIds.length
+                              ? `${line.addOnIds.length} add-on(s)`
+                              : "No add-ons yet"}
                       </p>
                     </div>
                     <p className="shrink-0 font-sans text-sm font-bold tabular-nums text-order-brownDark">
@@ -115,20 +119,22 @@ export function BuildsClient({ catalog, stacks }: Props) {
                     >
                       Change package
                     </button>
-                    <button
-                      type="button"
-                      className="rounded-full border border-order-line/80 px-3 py-1.5 font-sans text-[11px] font-medium text-order-brownInk transition hover:bg-order-bg"
-                      onClick={() => {
-                        setEditingLineId(line.id);
-                        router.push(
-                          stack?.kind === "platter"
-                            ? "/order/platter"
-                            : "/order/customize",
-                        );
-                      }}
-                    >
-                      Edit add-ons
-                    </button>
+                    {fixed ? null : (
+                      <button
+                        type="button"
+                        className="rounded-full border border-order-line/80 px-3 py-1.5 font-sans text-[11px] font-medium text-order-brownInk transition hover:bg-order-bg"
+                        onClick={() => {
+                          setEditingLineId(line.id);
+                          router.push(
+                            stack?.kind === "platter"
+                              ? "/order/platter"
+                              : "/order/customize",
+                          );
+                        }}
+                      >
+                        Edit add-ons
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="rounded-full px-3 py-1.5 font-sans text-[11px] font-medium text-order-red-text transition hover:bg-order-red-bg/50"

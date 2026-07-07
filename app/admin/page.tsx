@@ -61,6 +61,7 @@ export default async function AdminOverviewPage() {
         capWindowSummary: formatShopCapWindowSummary(renderedAt),
       }}
       intakeSnapshot={intakeSnapshot}
+      heroImageUrl={shopRow?.heroImageUrl ?? null}
     />
   );
 }

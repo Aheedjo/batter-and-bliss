@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTransition } from "react";
+import { isUploadedImage } from "@/lib/media/image-src";
 import { formatPrice } from "@/lib/order/money";
 
 function displayPrice(price: number | null) {
@@ -44,6 +45,7 @@ export function MenuProductCard(props: Props) {
             fill
             className="object-cover"
             sizes="56px"
+            unoptimized={isUploadedImage(props.imageUrl)}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -81,6 +83,7 @@ export function MenuProductCard(props: Props) {
             fill
             className="object-cover"
             sizes="56px"
+            unoptimized={isUploadedImage(imageUrl)}
           />
         ) : (
           <span className="flex h-full w-full items-center justify-center font-serif text-lg font-semibold text-order-taupe">

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isUploadedImage } from "@/lib/media/image-src";
 import type { StackId } from "@/lib/order/stacks";
 
 type Props = {
@@ -32,6 +33,7 @@ export function FeaturedCard({
             fill
             className="object-cover transition duration-500 group-hover:scale-[1.03]"
             sizes="96px"
+            unoptimized={isUploadedImage(imageSrc)}
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5 pr-0.5">

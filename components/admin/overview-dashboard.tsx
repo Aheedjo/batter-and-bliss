@@ -21,6 +21,7 @@ import {
   summaryParts,
 } from "@/lib/admin/order-display";
 import { DailyCapSettings } from "@/components/admin/daily-cap-settings";
+import { HeroImageSettings } from "@/components/admin/hero-image-settings";
 import { OrderIntakeSettingsPanel } from "@/components/admin/order-intake-settings";
 import type { PublicOrderIntakeSnapshot } from "@/lib/order/order-intake";
 
@@ -37,6 +38,7 @@ export function OverviewDashboard({
   renderedAtMs,
   dailyCap,
   intakeSnapshot,
+  heroImageUrl,
 }: {
   stats: OverviewStats;
   recentPending: AdminOrderListItem[];
@@ -47,6 +49,7 @@ export function OverviewDashboard({
     capWindowSummary: string;
   };
   intakeSnapshot: PublicOrderIntakeSnapshot;
+  heroImageUrl: string | null;
 }) {
   const router = useRouter();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -106,6 +109,8 @@ export function OverviewDashboard({
         snapshot={intakeSnapshot}
         formKey={renderedAtMs}
       />
+
+      <HeroImageSettings heroImageUrl={heroImageUrl} />
 
       <section className="space-y-3">
         <Link

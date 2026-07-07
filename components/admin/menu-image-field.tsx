@@ -4,6 +4,7 @@ import { ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import { validateMenuImageFile } from "@/lib/admin/menu-image-shared";
+import { isUploadedImage } from "@/lib/media/image-src";
 
 const ACCEPT = "image/jpeg,image/png,image/webp";
 
@@ -82,6 +83,7 @@ export function MenuImageField({ initialUrl, itemName }: Props) {
               fill
               className="object-cover"
               sizes="(max-width: 512px) 100vw, 512px"
+              unoptimized={isUploadedImage(imageUrl)}
             />
             <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-black/55 to-transparent p-3 pt-10">
               <button

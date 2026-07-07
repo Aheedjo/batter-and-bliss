@@ -6,7 +6,7 @@ import { SectionHeading } from "@/components/brand/section-heading";
 import { StackCard } from "@/components/order/stack-card";
 import { StickyAction } from "@/components/order/sticky-action";
 import type { PublicStack } from "@/lib/data/stacks-public";
-import type { StackId } from "@/lib/order/stacks";
+import { isFixedStack, type StackId } from "@/lib/order/stacks";
 import { useOrderStore } from "@/lib/stores/order-store";
 
 const btnPrimary =
@@ -164,8 +164,10 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
             disabled={!selected}
             onClick={() => {
               if (!selected) return;
-              const nextCustomize =
-                selectedStack?.kind === "platter"
+              const fixed = isFixedStack(selectedStack?.name);
+              const nextCustomize = fixed
+                ? "/order/builds"
+                : selectedStack?.kind === "platter"
                   ? "/order/platter"
                   : "/order/customize";
 
@@ -183,7 +185,7 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
               }
 
               addPancakeLine(selected);
-              router.push(nextCustomize);
+              router.push(fixed ? "/order/drinks" : nextCustomize);
             }}
             className={`${btnPrimary} ${!selected ? "pointer-events-none opacity-50" : ""}`}
           >

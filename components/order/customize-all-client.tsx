@@ -9,6 +9,7 @@ import { StickyAction } from "@/components/order/sticky-action";
 import { ToppingGridCard } from "@/components/order/topping-grid-card";
 import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
+import { isFixedStack } from "@/lib/order/stacks";
 import { useOrderStore } from "@/lib/stores/order-store";
 
 const btnPrimary =
@@ -62,10 +63,20 @@ export function CustomizeAllClient({ stacks, glazing, toppings, syrups }: Props)
     }
     if (stack?.kind === "platter") {
       router.replace("/order/platter");
+      return;
+    }
+    if (isFixedStack(stack?.name)) {
+      router.replace("/order/builds");
     }
   }, [pancakeLines.length, editingLineId, line, stack, router]);
 
-  if (!line || !editingLineId || stack?.kind === "platter") return null;
+  if (
+    !line ||
+    !editingLineId ||
+    stack?.kind === "platter" ||
+    isFixedStack(stack?.name)
+  )
+    return null;
 
   const glazingOk =
     line.randomBliss ||
