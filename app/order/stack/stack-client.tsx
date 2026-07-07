@@ -185,7 +185,7 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
               }
 
               addPancakeLine(selected);
-              router.push(fixed ? "/order/drinks" : nextCustomize);
+              router.push(nextCustomize);
             }}
             className={`${btnPrimary} ${!selected ? "pointer-events-none opacity-50" : ""}`}
           >
