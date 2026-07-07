@@ -1,9 +1,9 @@
 import { put } from "@vercel/blob";
+import { validateMenuImageFile } from "@/lib/admin/menu-image-shared";
 import {
-  menuImageContentType,
-  menuImagePathname,
-  validateMenuImageFile,
-} from "@/lib/admin/menu-image-shared";
+  processMenuImage,
+  processedMenuImageName,
+} from "@/lib/admin/process-menu-image";
 
 export async function uploadMenuImageToBlob(
   file: File,
@@ -20,12 +20,17 @@ export async function uploadMenuImageToBlob(
   }
 
   try {
-    const blob = await put(menuImagePathname(file), file, {
-      access: "public",
-      token,
-      contentType: menuImageContentType(file),
-      addRandomSuffix: false,
-    });
+    const processed = await processMenuImage(file);
+    const blob = await put(
+      `menu/${processedMenuImageName(processed.ext)}`,
+      processed.buffer,
+      {
+        access: "public",
+        token,
+        contentType: processed.contentType,
+        addRandomSuffix: false,
+      },
+    );
     return { url: blob.url };
   } catch (error) {
     console.error("[menu-image] blob put failed", error);
