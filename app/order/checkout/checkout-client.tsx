@@ -137,19 +137,23 @@ export function CheckoutClient({
     [pancakeLines, drinkQuantities, pricedStacks, catalog],
   );
 
-  const atDailyCap = useMemo(
-    () =>
-      dailyCapacity.cap != null && dailyCapacity.used >= dailyCapacity.cap,
-    [dailyCapacity.cap, dailyCapacity.used],
-  );
-
-  const intakeBlocked = !intake.checkoutAllowed;
-
   const first = pancakeLines[0];
   const firstStack = first ? stacksById.get(first.stackId) : null;
   const hasPancakes = pancakeLines.length > 0;
   const hasDrinks = Object.values(drinkQuantities).some((qty) => qty > 0);
   const hasAnyItems = hasPancakes || hasDrinks;
+  // Drinks aren't part of the kitchen batch, so drinks-only carts are always orderable.
+  const isDrinksOnly = !hasPancakes && hasDrinks;
+
+  const atDailyCap = useMemo(
+    () =>
+      !isDrinksOnly &&
+      dailyCapacity.cap != null &&
+      dailyCapacity.used >= dailyCapacity.cap,
+    [isDrinksOnly, dailyCapacity.cap, dailyCapacity.used],
+  );
+
+  const intakeBlocked = !isDrinksOnly && !intake.checkoutAllowed;
 
   const placerOk = placedByName.trim().length >= 2;
   const payerNameEffective = payerSameAsPlacer
@@ -555,13 +559,13 @@ export function CheckoutClient({
         <Subheading kicker="Pay" title="Transfer details" />
         {!intakeBlocked && !atDailyCap ? (
           <div className="mt-3 rounded-xl border border-order-line/70 bg-order-bg/95 px-3 py-2.5 text-[11px] leading-snug text-order-taupe ring-1 ring-black/[0.04]">
-            {intake.orderForDayLabel ? (
+            {intake.orderForDayLabel && !isDrinksOnly ? (
               <p className="font-sans text-order-brownInk">
                 <span className="text-order-muted">Kitchen day</span>{" "}
                 <span className="font-semibold">{intake.orderForDayLabel}</span>
               </p>
             ) : null}
-            <p className={intake.orderForDayLabel ? "mt-1.5" : ""}>
+            <p className={intake.orderForDayLabel && !isDrinksOnly ? "mt-1.5" : ""}>
               Use the{" "}
               <span className="font-medium text-order-brownInk">exact total</span>{" "}
               and{" "}

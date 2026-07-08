@@ -138,6 +138,9 @@ function kitchenBatchDateKeyWhenScheduleAllows(
   return tomorrowKey;
 }
 
+/** Drinks aren't cooked in the kitchen batch, so they're orderable even when pancakes are closed. */
+const DRINKS_STILL_OPEN_NOTE = "Drinks-only orders are still open anytime.";
+
 function blockedMessage(reason: IntakeReason): string {
   switch (reason) {
     case "paused":
@@ -185,7 +188,7 @@ export function buildPublicOrderIntakeSnapshot(
       banner: {
         variant: "danger",
         title: "Orders paused",
-        body: blockedMessage("paused"),
+        body: `${blockedMessage("paused")} ${DRINKS_STILL_OPEN_NOTE}`,
       },
       shopCalendarTodayKey,
       orderForDateKey: null,
@@ -224,7 +227,7 @@ export function buildPublicOrderIntakeSnapshot(
     banner: {
       variant: "warning",
       title: "Orders aren’t open",
-      body: blockedMessage(reason),
+      body: `${blockedMessage(reason)} ${DRINKS_STILL_OPEN_NOTE}`,
     },
     shopCalendarTodayKey,
     orderForDateKey: null,
@@ -250,7 +253,10 @@ export const getCachedPublicOrderIntakeSnapshot = cache(
 export function evaluateCheckoutIntake(
   now: Date,
   s: ShopIntakeSettings,
+  opts?: { drinksOnly?: boolean },
 ): { ok: true } | { ok: false; message: string } {
+  // Drinks-only orders are always allowed (not tied to the kitchen batch).
+  if (opts?.drinksOnly) return { ok: true };
   const snap = buildPublicOrderIntakeSnapshot(now, s);
   if (snap.checkoutAllowed) return { ok: true };
   return { ok: false, message: snap.checkoutBlockedMessage ?? "Ordering is closed right now." };

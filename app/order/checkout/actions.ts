@@ -8,6 +8,10 @@ import {
   getDailyOrderCap,
   isAtOrOverTransferredSlotCap,
 } from "@/lib/order/daily-order-cap";
+import {
+  DRINKS_ONLY_STACK_ID,
+  isDrinksOnlySummary,
+} from "@/lib/order/drinks-only";
 import { formatShopCapWindowSummary, shopCapWindowBoundsUtc } from "@/lib/order/lagos-calendar";
 import { evaluateCheckoutIntake, loadShopIntakeSettings } from "@/lib/order/order-intake";
 import {
@@ -55,6 +59,7 @@ export async function reportTransferSent(
           id: true,
           status: true,
           transferReportedAt: true,
+          stackId: true,
         },
       });
       if (!order) return { type: "fail" as const, message: "Order not found." };
@@ -70,7 +75,7 @@ export async function reportTransferSent(
       }
 
       const cap = await getDailyOrderCap();
-      if (cap != null) {
+      if (cap != null && order.stackId !== DRINKS_ONLY_STACK_ID) {
         const used = await countTransferredSlotsForShopCapWindowWithTx(
           tx,
           new Date(),
@@ -114,6 +119,7 @@ async function countTransferredSlotsForShopCapWindowWithTx(
   return tx.order.count({
     where: {
       status: { in: ["pending", "confirmed"] },
+      stackId: { not: DRINKS_ONLY_STACK_ID },
       transferReportedAt: {
         not: null,
         gte: startIso,
@@ -133,19 +139,23 @@ export async function createCheckoutOrder(
   }
   const d: CheckoutOrderPayload = parsed.data;
   const emailTrim = d.email?.trim();
+  const drinksOnly = isDrinksOnlySummary(d.summaryLines);
 
   try {
-    const intakeSettings = await loadShopIntakeSettings();
-    const intakeGate = evaluateCheckoutIntake(new Date(), intakeSettings);
-    if (!intakeGate.ok) return fail(intakeGate.message);
+    // Drinks-only orders bypass the kitchen-day gate and the daily cap.
+    if (!drinksOnly) {
+      const intakeSettings = await loadShopIntakeSettings();
+      const intakeGate = evaluateCheckoutIntake(new Date(), intakeSettings);
+      if (!intakeGate.ok) return fail(intakeGate.message);
 
-    const cap = await getDailyOrderCap();
-    if (cap != null) {
-      const used = await countTransferredSlotsForShopCapWindow(new Date());
-      if (isAtOrOverTransferredSlotCap(cap, used)) {
-        return fail(
-          `We’ve reached order capacity for this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or reach out if you need help.`,
-        );
+      const cap = await getDailyOrderCap();
+      if (cap != null) {
+        const used = await countTransferredSlotsForShopCapWindow(new Date());
+        if (isAtOrOverTransferredSlotCap(cap, used)) {
+          return fail(
+            `We’ve reached order capacity for this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or reach out if you need help.`,
+          );
+        }
       }
     }
 
@@ -159,7 +169,7 @@ export async function createCheckoutOrder(
         expectedBankSenderName: d.expectedBankSenderName,
         email: emailTrim ? emailTrim : null,
         deliveryAddress: d.deliveryAddress,
-        stackId: d.stackId,
+        stackId: drinksOnly ? DRINKS_ONLY_STACK_ID : d.stackId,
         stackName: d.stackName,
         customization: d.customization,
         note: d.note,

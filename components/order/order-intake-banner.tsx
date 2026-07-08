@@ -1,12 +1,32 @@
+"use client";
+
+import { usePathname, useSearchParams } from "next/navigation";
 import type { PublicOrderIntakeSnapshot } from "@/lib/order/order-intake";
+import { useOrderStore } from "@/lib/stores/order-store";
+
+function useDrinksOnlyFlow() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pancakeLines = useOrderStore((s) => s.pancakeLines);
+  const drinkQuantities = useOrderStore((s) => s.drinkQuantities);
+
+  const hasPancakes = pancakeLines.length > 0;
+  const hasDrinks = Object.values(drinkQuantities).some((qty) => qty > 0);
+  const drinksOnlyCart = !hasPancakes && hasDrinks;
+  const drinksOnlyRoute =
+    pathname === "/order/drinks" && searchParams.get("only") === "1";
+
+  return drinksOnlyCart || drinksOnlyRoute;
+}
 
 export function OrderIntakeBanner({
   snapshot,
 }: {
   snapshot: PublicOrderIntakeSnapshot;
 }) {
+  const drinksOnlyFlow = useDrinksOnlyFlow();
   const b = snapshot.banner;
-  if (!b) return null;
+  if (!b || drinksOnlyFlow) return null;
 
   const shell =
     b.variant === "danger"

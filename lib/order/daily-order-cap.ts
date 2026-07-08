@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/db";
+import { DRINKS_ONLY_STACK_ID } from "@/lib/order/drinks-only";
 import { shopCapWindowBoundsUtc } from "@/lib/order/lagos-calendar";
 
 const SHOP_ID = "default";
 
-/** Count payment-reported slots in the current shop 6am–6am window (WAT). */
+/**
+ * Count payment-reported slots in the current shop 6am–6am window (WAT).
+ * Drinks-only orders don't use the kitchen, so they never consume a cap slot.
+ */
 export async function countTransferredSlotsForShopCapWindow(
   now: Date = new Date(),
 ): Promise<number> {
@@ -13,6 +17,7 @@ export async function countTransferredSlotsForShopCapWindow(
   return prisma.order.count({
     where: {
       status: { in: ["pending", "confirmed"] },
+      stackId: { not: DRINKS_ONLY_STACK_ID },
       transferReportedAt: {
         not: null,
         gte: startIso,
