@@ -4,12 +4,40 @@ import type { CartSummaryLine } from "@/lib/order/pricing";
 /** Fixed locale + hour12 so SSR and browser match (undefined locale differs by runtime). */
 const DISPLAY_LOCALE = "en-US";
 
+/** How long confirmed/rejected orders stay visible in the admin completed list. */
+export const COMPLETED_ORDERS_VISIBLE_DAYS = 7;
+
 export function startOfLocalDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
 export function isSameLocalDay(a: Date, b: Date) {
   return startOfLocalDay(a) === startOfLocalDay(b);
+}
+
+/** True when `iso` falls on today or the previous `days - 1` local calendar days. */
+export function isWithinRecentLocalDays(
+  iso: string,
+  nowMs: number,
+  days: number = COMPLETED_ORDERS_VISIBLE_DAYS,
+): boolean {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return false;
+  const now = new Date(nowMs);
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  return t >= cutoff.getTime();
+}
+
+/** Inclusive start of the oldest local day still shown in the completed list. */
+export function recentCompletedOrdersCutoff(
+  nowMs: number,
+  days: number = COMPLETED_ORDERS_VISIBLE_DAYS,
+): Date {
+  const now = new Date(nowMs);
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  return cutoff;
 }
 
 export function formatTime(iso: string) {
@@ -63,26 +91,31 @@ export type TodayOrderStrip = {
   rejected: number;
 };
 
+/** Status counts aligned with the orders list: all pending + completed in the last 7 days. */
+export function computeOrderStatusCounts(
+  orders: Pick<AdminOrderListItem, "updatedAt" | "status">[],
+  nowMs: number,
+): TodayOrderStrip & { all: number } {
+  const pending = orders.filter((o) => o.status === "pending").length;
+  const confirmed = orders.filter(
+    (o) =>
+      o.status === "confirmed" &&
+      isWithinRecentLocalDays(o.updatedAt, nowMs),
+  ).length;
+  const rejected = orders.filter(
+    (o) =>
+      o.status === "rejected" &&
+      isWithinRecentLocalDays(o.updatedAt, nowMs),
+  ).length;
+  return { pending, confirmed, rejected, all: pending + confirmed + rejected };
+}
+
+/** @deprecated Use computeOrderStatusCounts */
 export function computeTodayStrip(
   orders: Pick<AdminOrderListItem, "placedAt" | "updatedAt" | "status">[],
   nowMs: number,
 ): TodayOrderStrip {
-  const day0 = startOfLocalDay(new Date(nowMs));
-  const now = new Date(nowMs);
-  const placedToday = orders.filter(
-    (o) => startOfLocalDay(new Date(o.placedAt)) === day0,
-  );
-  return {
-    pending: placedToday.filter((o) => o.status === "pending").length,
-    confirmed: orders.filter(
-      (o) =>
-        o.status === "confirmed" && isSameLocalDay(new Date(o.updatedAt), now),
-    ).length,
-    rejected: orders.filter(
-      (o) =>
-        o.status === "rejected" && isSameLocalDay(new Date(o.updatedAt), now),
-    ).length,
-  };
+  return computeOrderStatusCounts(orders, nowMs);
 }
 
 export function summaryParts(lines: CartSummaryLine[] | null, fallback: string) {

@@ -112,14 +112,15 @@ export function DailyCapSettings({
       >
         <div ref={panelInnerRef} className="px-4 pb-4 pt-1 sm:px-4 sm:pb-5">
           <p className="font-sans text-sm leading-relaxed text-order-taupe">
-            When a customer taps &quot;I&apos;ve sent the transfer&quot;, it uses one
-            slot for that calendar day. Rejected orders free a slot the same day.
-            New checkouts and new payment reports pause when slots are full.
+            When a customer taps &quot;I&apos;ve sent the transfer&quot;, each pancake
+            package in their order counts toward the daily limit. Rejected orders
+            free those pancakes the same day. New checkouts and payment reports pause
+            when capacity is full.
           </p>
 
           <div className="mt-4 rounded-xl bg-order-bg px-3 py-3 ring-1 ring-black/[0.04]">
             <p className="font-sans text-[10px] font-semibold uppercase tracking-wide text-order-muted">
-              Today · slots used ({capLabel})
+              Today · pancakes counted ({capLabel})
             </p>
             <p className="mt-1 font-serif text-xl font-semibold tabular-nums text-order-brownInk">
               {transferredSlotsToday}
@@ -137,7 +138,7 @@ export function DailyCapSettings({
             </p>
             {atCap ? (
               <p className="mt-2 font-sans text-xs font-medium text-amber-900 dark:text-amber-100">
-                At capacity — raise the limit below or wait for rejections to free slots.
+                At capacity — raise the limit below or wait for rejections to free pancakes.
               </p>
             ) : null}
           </div>
@@ -148,7 +149,7 @@ export function DailyCapSettings({
                 htmlFor="daily-order-cap"
                 className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-order-taupe"
               >
-                Max slots per day
+                Max pancakes per day
               </label>
               <input
                 id="daily-order-cap"

@@ -49,7 +49,7 @@ model Stack {
 
 model ShopSetting {
   id            String   @id @default("default")
-  /// Max “I’ve sent the transfer” slots per shop 6am–6am day (WAT). Null = no limit.
+  /// Max pancake packages (after “I’ve sent the transfer”) per shop 6am–6am day (WAT). Null = no limit.
   dailyOrderCap Int?
   /// When false, checkout is blocked (manual pause).
   orderIntakeEnabled Boolean @default(true)

@@ -15,11 +15,13 @@ import type { AdminOrderListItem } from "@/lib/admin/admin-order-types";
 import { setOrderStatus } from "@/app/admin/orders/actions";
 import { StatusBadge } from "@/components/admin/admin-order-badges";
 import {
+  COMPLETED_ORDERS_VISIBLE_DAYS,
+  computeOrderStatusCounts,
+  formatOrderSlotLabel,
   formatTime,
-  isSameLocalDay,
+  isWithinRecentLocalDays,
   queueHint,
   summaryParts,
-  type TodayOrderStrip,
 } from "@/lib/admin/order-display";
 import { formatPrice } from "@/lib/order/money";
 
@@ -137,9 +139,9 @@ function PendingOrderCard({
 
           <div className="flex flex-wrap items-center gap-2 font-sans text-sm text-order-brownInk">
             <span className="leading-snug">{primary}</span>
-            {extraPills.map((p) => (
+            {extraPills.map((p, i) => (
               <span
-                key={p}
+                key={`${order.id}-extra-${i}`}
                 className="rounded-full bg-order-bg px-2.5 py-0.5 text-xs font-medium text-order-muted ring-1 ring-order-line/50"
               >
                 + {p}
@@ -221,13 +223,24 @@ function PendingOrderCard({
   );
 }
 
-function CompletedOrderCard({ order }: { order: AdminOrderListItem }) {
+function CompletedOrderCard({
+  order,
+  renderedAtMs,
+}: {
+  order: AdminOrderListItem;
+  renderedAtMs: number;
+}) {
   const { primary, extraPills } = summaryParts(
     order.summaryLines,
     order.customization,
   );
   const doneLabel =
     order.status === "confirmed" ? "Delivered" : "Updated";
+  const placedLabel = formatOrderSlotLabel(
+    order.placedAt,
+    order.etaLabel,
+    renderedAtMs,
+  );
 
   return (
     <li className="relative rounded-[1.5rem] border border-order-line/70 bg-order-card/95 p-4 opacity-95 shadow-soft ring-1 ring-white/70">
@@ -262,16 +275,16 @@ function CompletedOrderCard({ order }: { order: AdminOrderListItem }) {
           <div className="flex items-center justify-between gap-2 rounded-xl bg-order-beige/40 px-3 py-2.5 font-sans text-sm text-order-brownInk ring-1 ring-order-line/30">
             <span className="flex items-center gap-2">
               <CalendarClock className="h-4 w-4 shrink-0 text-order-muted" aria-hidden />
-              {formatTime(order.placedAt)}
+              {placedLabel || formatTime(order.placedAt)}
             </span>
             <span className="text-xs font-medium text-order-muted">{doneLabel}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 font-sans text-sm text-order-brownInk">
             <span className="leading-snug">{primary}</span>
-            {extraPills.map((p) => (
+            {extraPills.map((p, i) => (
               <span
-                key={p}
+                key={`${order.id}-extra-${i}`}
                 className="rounded-full bg-order-bg px-2.5 py-0.5 text-xs font-medium text-order-muted ring-1 ring-order-line/50"
               >
                 + {p}
@@ -297,11 +310,9 @@ function CompletedOrderCard({ order }: { order: AdminOrderListItem }) {
 export function OrdersAdminClient({
   orders,
   renderedAtMs,
-  todayStrip,
 }: {
   orders: AdminOrderListItem[];
   renderedAtMs: number;
-  todayStrip: TodayOrderStrip;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("pending");
@@ -312,15 +323,12 @@ export function OrdersAdminClient({
   const [earliestFirst, setEarliestFirst] = useState(true);
   const [completedOpen, setCompletedOpen] = useState(true);
 
-  const tabCounts = useMemo(
-    () => ({
-      all: orders.length,
-      pending: orders.filter((o) => o.status === "pending").length,
-      confirmed: orders.filter((o) => o.status === "confirmed").length,
-      rejected: orders.filter((o) => o.status === "rejected").length,
-    }),
-    [orders],
+  const statusCounts = useMemo(
+    () => computeOrderStatusCounts(orders, renderedAtMs),
+    [orders, renderedAtMs],
   );
+
+  const tabCounts = statusCounts;
 
   const pendingQueue = useMemo(() => {
     let list = orders.filter((o) => o.status === "pending");
@@ -335,12 +343,11 @@ export function OrdersAdminClient({
     return list;
   }, [orders, filter, earliestFirst]);
 
-  const completedToday = useMemo(() => {
-    const now = new Date(renderedAtMs);
+  const recentCompleted = useMemo(() => {
     let list = orders.filter(
       (o) =>
         o.status !== "pending" &&
-        isSameLocalDay(new Date(o.updatedAt), now),
+        isWithinRecentLocalDays(o.updatedAt, renderedAtMs),
     );
     if (filter === "pending") list = [];
     else if (filter === "confirmed")
@@ -380,12 +387,14 @@ export function OrdersAdminClient({
       </h1>
 
       <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-order-taupe">
-        Today:{" "}
-        <span className="text-order-orange-text">{todayStrip.pending} pending</span>
+        <span className="text-order-orange-text">{statusCounts.pending} pending</span>
         <span className="mx-1.5 font-normal text-order-muted">•</span>
-        <span className="text-emerald-800">{todayStrip.confirmed} confirmed</span>
+        <span className="text-emerald-800">{statusCounts.confirmed} confirmed</span>
         <span className="mx-1.5 font-normal text-order-muted">•</span>
-        <span className="text-order-red-text">{todayStrip.rejected} rejected</span>
+        <span className="text-order-red-text">{statusCounts.rejected} rejected</span>
+        <span className="mt-0.5 block font-normal normal-case tracking-normal text-order-muted">
+          Completed counts are for the last {COMPLETED_ORDERS_VISIBLE_DAYS} days.
+        </span>
       </p>
 
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2">
@@ -477,7 +486,7 @@ export function OrdersAdminClient({
             className="flex w-full items-center justify-between gap-2 text-left"
           >
             <h2 className="font-sans text-sm font-bold text-order-brownInk">
-              Completed today
+              Completed (last {COMPLETED_ORDERS_VISIBLE_DAYS} days)
             </h2>
             {completedOpen ? (
               <ChevronUp className="h-5 w-5 shrink-0 text-order-muted" aria-hidden />
@@ -486,14 +495,18 @@ export function OrdersAdminClient({
             )}
           </button>
           {completedOpen ? (
-            completedToday.length === 0 ? (
+            recentCompleted.length === 0 ? (
               <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-8 text-center font-sans text-sm text-order-muted">
-                No completed orders today yet.
+                No completed orders in the last {COMPLETED_ORDERS_VISIBLE_DAYS} days.
               </p>
             ) : (
               <ul className="space-y-3">
-                {completedToday.map((order) => (
-                  <CompletedOrderCard key={order.id} order={order} />
+                {recentCompleted.map((order) => (
+                  <CompletedOrderCard
+                    key={order.id}
+                    order={order}
+                    renderedAtMs={renderedAtMs}
+                  />
                 ))}
               </ul>
             )

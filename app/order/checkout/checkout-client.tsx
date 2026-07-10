@@ -149,8 +149,8 @@ export function CheckoutClient({
     () =>
       !isDrinksOnly &&
       dailyCapacity.cap != null &&
-      dailyCapacity.used >= dailyCapacity.cap,
-    [isDrinksOnly, dailyCapacity.cap, dailyCapacity.used],
+      dailyCapacity.used + pancakeLines.length > dailyCapacity.cap,
+    [isDrinksOnly, dailyCapacity.cap, dailyCapacity.used, pancakeLines.length],
   );
 
   const intakeBlocked = !isDrinksOnly && !intake.checkoutAllowed;
@@ -355,8 +355,8 @@ export function CheckoutClient({
               Order window is full
             </p>
             <p className="mt-1 font-sans text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-100/85">
-              Try again after the next opening or message us—we can&apos;t take more
-              payment reports in this shop period.
+              We&apos;ve hit today&apos;s pancake limit. Try again after the next
+              opening or message us—we can&apos;t take more orders in this shop period.
             </p>
           </div>
         ) : null}

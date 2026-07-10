@@ -4,9 +4,11 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import {
+  countPancakesInOrder,
+  countPancakesInSummaryLines,
   countTransferredSlotsForShopCapWindow,
   getDailyOrderCap,
-  isAtOrOverTransferredSlotCap,
+  wouldExceedPancakeCap,
 } from "@/lib/order/daily-order-cap";
 import {
   DRINKS_ONLY_STACK_ID,
@@ -60,6 +62,7 @@ export async function reportTransferSent(
           status: true,
           transferReportedAt: true,
           stackId: true,
+          summaryLines: true,
         },
       });
       if (!order) return { type: "fail" as const, message: "Order not found." };
@@ -80,10 +83,11 @@ export async function reportTransferSent(
           tx,
           new Date(),
         );
-        if (used >= cap) {
+        const pancakesInOrder = countPancakesInOrder(order);
+        if (wouldExceedPancakeCap(cap, used, pancakesInOrder)) {
           return {
             type: "fail" as const,
-            message: `We’ve reached the limit for payment reports in this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or contact us for help.`,
+            message: `We’ve reached pancake capacity for payment reports in this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or contact us for help.`,
           };
         }
       }
@@ -107,7 +111,11 @@ export async function reportTransferSent(
   }
 }
 
-type OrderTx = { order: { count: typeof prisma.order.count } };
+type OrderTx = {
+  order: {
+    findMany: typeof prisma.order.findMany;
+  };
+};
 
 async function countTransferredSlotsForShopCapWindowWithTx(
   tx: OrderTx,
@@ -116,7 +124,7 @@ async function countTransferredSlotsForShopCapWindowWithTx(
   const { start, end } = shopCapWindowBoundsUtc(now);
   const startIso = start.toISOString();
   const endIso = end.toISOString();
-  return tx.order.count({
+  return tx.order.findMany({
     where: {
       status: { in: ["pending", "confirmed"] },
       stackId: { not: DRINKS_ONLY_STACK_ID },
@@ -126,7 +134,10 @@ async function countTransferredSlotsForShopCapWindowWithTx(
         lt: endIso,
       },
     },
-  });
+    select: { summaryLines: true, stackId: true },
+  }).then((orders) =>
+    orders.reduce((sum, order) => sum + countPancakesInOrder(order), 0),
+  );
 }
 
 export async function createCheckoutOrder(
@@ -151,9 +162,10 @@ export async function createCheckoutOrder(
       const cap = await getDailyOrderCap();
       if (cap != null) {
         const used = await countTransferredSlotsForShopCapWindow(new Date());
-        if (isAtOrOverTransferredSlotCap(cap, used)) {
+        const incomingPancakes = countPancakesInSummaryLines(d.summaryLines);
+        if (wouldExceedPancakeCap(cap, used, incomingPancakes)) {
           return fail(
-            `We’ve reached order capacity for this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or reach out if you need help.`,
+            `We’ve reached pancake capacity for this shop period (${formatShopCapWindowSummary(new Date())}). Try again after the next window or reach out if you need help.`,
           );
         }
       }

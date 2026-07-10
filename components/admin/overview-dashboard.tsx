@@ -295,9 +295,9 @@ function OverviewPendingCard({
 
           <div className="flex flex-wrap items-center gap-2 font-sans text-sm text-order-brownInk">
             <span className="leading-snug">{primary}</span>
-            {extraPills.map((p) => (
+            {extraPills.map((p, i) => (
               <span
-                key={p}
+                key={`${order.id}-extra-${i}`}
                 className="rounded-full bg-order-bg px-2.5 py-0.5 text-xs font-medium text-order-muted ring-1 ring-order-line/50"
               >
                 + {p}
