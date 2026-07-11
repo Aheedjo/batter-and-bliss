@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { compareToppingCategory } from "@/lib/order/menu-categories";
+import { compareToppingCategory, isPlatterAddOnCategory } from "@/lib/order/menu-categories";
 import type { ToppingCategory } from "@/lib/order/menu-categories";
 import { prisma } from "@/lib/db";
 import type { PublicTopping } from "./public-topping";
@@ -9,6 +9,17 @@ import {
 } from "./toppings-fallback";
 
 export type { PublicTopping } from "./public-topping";
+
+const PLATTER_ADD_ON_CATEGORIES = ["platter_drizzle", "platter_topping"] as const;
+
+const toppingSelect = {
+  id: true,
+  name: true,
+  price: true,
+  category: true,
+  imageUrl: true,
+  stackId: true,
+} as const;
 
 function logDbUnavailable(error: unknown) {
   const message =
@@ -36,7 +47,7 @@ export const getAvailableToppings = cache(async function getAvailableToppings():
     async () => {
       const rows = await prisma.topping.findMany({
         where: { available: true },
-        select: { id: true, name: true, price: true, category: true, imageUrl: true },
+        select: toppingSelect,
       });
       rows.sort(
         (a: PublicTopping, b: PublicTopping) =>
@@ -54,12 +65,42 @@ export const getAvailableToppingsByCategory = cache(
   category: ToppingCategory,
 ): Promise<PublicTopping[]> {
   return withToppingFallback(
-    () =>
-      prisma.topping.findMany({
+    async () => {
+      const rows = await prisma.topping.findMany({
         where: { available: true, category },
         orderBy: { name: "asc" },
-        select: { id: true, name: true, price: true, category: true, imageUrl: true },
-      }),
+        select: toppingSelect,
+      });
+      // Platter add-ons are managed in admin — no baked-in fallback menu.
+      if (
+        rows.length === 0 &&
+        !isPlatterAddOnCategory(category)
+      ) {
+        const fallback = getFallbackToppingsByCategory(category);
+        if (fallback.length > 0) return fallback;
+      }
+      return rows;
+    },
     () => getFallbackToppingsByCategory(category),
+  );
+});
+
+/** All platter toppings and drizzles (filtered per platter on the client). */
+export const getPlatterAddOns = cache(async function getPlatterAddOns(): Promise<
+  PublicTopping[]
+> {
+  return withToppingFallback(
+    async () => {
+      const rows = await prisma.topping.findMany({
+        where: {
+          available: true,
+          category: { in: [...PLATTER_ADD_ON_CATEGORIES] },
+        },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
+        select: toppingSelect,
+      });
+      return rows;
+    },
+    () => [],
   );
 });

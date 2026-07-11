@@ -23,22 +23,17 @@ function SectionLabel({ children }: { children: string }) {
 
 type Props = {
   stacks: PublicStack[];
-  platterGlazing: PublicTopping[];
-  platterToppings: PublicTopping[];
+  platterAddOns: PublicTopping[];
 };
 
 export function PlatterCustomizeClient({
   stacks,
-  platterGlazing,
-  platterToppings,
+  platterAddOns,
 }: Props) {
   const router = useRouter();
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
   const editingLineId = useOrderStore((s) => s.editingLineId);
   const toggleLineAddOn = useOrderStore((s) => s.toggleLineAddOn);
-  const toggleExclusiveAddOnGroup = useOrderStore(
-    (s) => s.toggleExclusiveAddOnGroup,
-  );
 
   const line = useMemo(
     () => pancakeLines.find((l) => l.id === editingLineId),
@@ -49,11 +44,23 @@ export function PlatterCustomizeClient({
     [line, stacks],
   );
 
-  const glazingIds = useMemo(
-    () => platterGlazing.map((g) => g.id),
-    [platterGlazing],
+  const stackId = line?.stackId ?? null;
+
+  const forThisPlatter = useMemo(
+    () =>
+      stackId
+        ? platterAddOns.filter((t) => t.stackId === stackId)
+        : [],
+    [platterAddOns, stackId],
   );
-  const glazingIdSet = useMemo(() => new Set(glazingIds), [glazingIds]);
+  const platterToppings = useMemo(
+    () => forThisPlatter.filter((t) => t.category === "platter_topping"),
+    [forThisPlatter],
+  );
+  const platterDrizzles = useMemo(
+    () => forThisPlatter.filter((t) => t.category === "platter_drizzle"),
+    [forThisPlatter],
+  );
 
   useEffect(() => {
     if (pancakeLines.length === 0) {
@@ -71,11 +78,7 @@ export function PlatterCustomizeClient({
 
   if (!line || !editingLineId || stack?.kind !== "platter") return null;
 
-  const pickedGlazingCount = line.addOnIds.filter((id) =>
-    glazingIdSet.has(id),
-  ).length;
-  const glazingOk =
-    platterGlazing.length === 0 || pickedGlazingCount === 1;
+  const hasOptions = platterDrizzles.length > 0 || platterToppings.length > 0;
 
   return (
     <>
@@ -84,41 +87,17 @@ export function PlatterCustomizeClient({
 
         <SectionHeading
           eyebrow="Platter"
-          title="Glazing & toppings"
-          description="Choose one glazing and any of the platter toppings for this order."
+          title={stack.name}
+          description="Pick toppings and drizzles for this platter. Everything here is optional."
           italic
           className="mb-6"
         />
-
-        {platterGlazing.length > 0 ? (
-          <>
-            <SectionLabel>Glazing</SectionLabel>
-            <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Pick one—chocolate or whipping cream.
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
-              {platterGlazing.map((t) => (
-                <li key={t.id} className="min-w-0">
-                  <ToppingGridCard
-                    name={t.name}
-                    price={t.price}
-                    imageSrc={t.imageUrl ?? undefined}
-                    selected={line.addOnIds.includes(t.id)}
-                    onToggle={() =>
-                      toggleExclusiveAddOnGroup(glazingIds, t.id)
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
 
         {platterToppings.length > 0 ? (
           <>
             <SectionLabel>Toppings</SectionLabel>
             <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Mix freely—pistachio, white chocolate, lotus (you can choose several).
+              Choose as many as you like.
             </p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
               {platterToppings.map((t) => (
@@ -135,28 +114,53 @@ export function PlatterCustomizeClient({
             </ul>
           </>
         ) : null}
+
+        {platterDrizzles.length > 0 ? (
+          <>
+            <SectionLabel>Drizzles</SectionLabel>
+            <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
+              Choose as many as you like.
+            </p>
+            <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
+              {platterDrizzles.map((t) => (
+                <li key={t.id} className="min-w-0">
+                  <ToppingGridCard
+                    name={t.name}
+                    price={t.price}
+                    imageSrc={t.imageUrl ?? undefined}
+                    selected={line.addOnIds.includes(t.id)}
+                    onToggle={() => toggleLineAddOn(t.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
+
+        {!hasOptions ? (
+          <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-8 text-center font-sans text-sm leading-relaxed text-order-muted">
+            Platter toppings and drizzles for {stack.name} aren&apos;t listed
+            yet—you can still continue. In Admin → Menu, add them under{" "}
+            <span className="font-semibold text-order-brownInk">
+              Platter topping
+            </span>{" "}
+            or{" "}
+            <span className="font-semibold text-order-brownInk">
+              Platter drizzle
+            </span>{" "}
+            and choose this platter.
+          </p>
+        ) : null}
       </div>
 
       <StickyAction>
-        <div className="space-y-2">
-          {!glazingOk && platterGlazing.length > 0 ? (
-            <p className="text-center font-sans text-[12px] text-order-taupe">
-              Select one glazing to continue.
-            </p>
-          ) : null}
-          <button
-            type="button"
-            disabled={!glazingOk && platterGlazing.length > 0}
-            onClick={() => router.push("/order/builds")}
-            className={`${btnPrimary} ${
-              !glazingOk && platterGlazing.length > 0
-                ? "pointer-events-none opacity-50"
-                : ""
-            }`}
-          >
-            Continue
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/order/builds")}
+          className={btnPrimary}
+        >
+          Continue
+        </button>
       </StickyAction>
     </>
   );

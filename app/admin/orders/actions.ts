@@ -62,3 +62,40 @@ export async function setOrderStatus(
   revalidatePath("/admin");
   return { ok: true };
 }
+
+export async function setOrderDelivered(
+  _prev: AdminOrderActionState | undefined,
+  formData: FormData,
+): Promise<AdminOrderActionState> {
+  const idParsed = cuidSchema.safeParse(formData.get("id")?.toString());
+  if (!idParsed.success) return fail("Invalid order.");
+
+  const deliveredRaw = formData.get("delivered")?.toString();
+  const delivered = deliveredRaw === "true" || deliveredRaw === "1";
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: idParsed.data },
+      select: { status: true },
+    });
+    if (!order) return fail("Order not found.");
+    if (order.status !== "confirmed") {
+      return fail("Only confirmed orders can be marked delivered.");
+    }
+
+    await prisma.order.update({
+      where: { id: idParsed.data },
+      data: {
+        deliveredAt: delivered ? new Date().toISOString() : null,
+      },
+    });
+  } catch (e) {
+    if (isNotFound(e)) return fail("Order not found.");
+    console.error(e);
+    return fail("Could not update delivery status.");
+  }
+  revalidatePath(adminPath);
+  revalidatePath(`/admin/orders/${idParsed.data}`);
+  revalidatePath("/admin");
+  return { ok: true };
+}

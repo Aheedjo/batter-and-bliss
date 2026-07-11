@@ -7,8 +7,9 @@ import { createPortal } from "react-dom";
 import type { ActionState } from "@/app/admin/menu/actions";
 import { MenuImageField } from "@/components/admin/menu-image-field";
 import {
-  TOPPING_CATEGORIES,
+  ADMIN_TOPPING_CATEGORIES,
   labelForToppingCategory,
+  isPlatterAddOnCategory,
 } from "@/lib/order/menu-categories";
 
 export type MenuKind = "stack" | "topping" | "extra";
@@ -22,6 +23,12 @@ export type MenuEditorItem = {
   category?: string;
   description?: string | null;
   imageUrl?: string | null;
+  stackId?: string | null;
+};
+
+export type PlatterStackOption = {
+  id: string;
+  name: string;
 };
 
 type Props = {
@@ -30,6 +37,8 @@ type Props = {
   mode: "create" | "edit";
   item: MenuEditorItem | null;
   defaultCategory?: string;
+  platterStacks?: PlatterStackOption[];
+  defaultPlatterStackId?: string;
   onClose: () => void;
   saveAction: (
     prev: ActionState | undefined,
@@ -47,6 +56,8 @@ export function ItemEditorSheet({
   mode,
   item,
   defaultCategory = "topping",
+  platterStacks = [],
+  defaultPlatterStackId,
   onClose,
   saveAction,
   deleteAction,
@@ -62,6 +73,17 @@ export function ItemEditorSheet({
   const [rendered, setRendered] = useState(open);
   const [closing, setClosing] = useState(false);
   const [entered, setEntered] = useState(false);
+  const [category, setCategory] = useState(
+    item?.category ?? defaultCategory,
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setCategory(item?.category ?? defaultCategory);
+  }, [open, item?.category, defaultCategory, item?.id]);
+
+  const showPlatterPicker =
+    kind === "topping" && isPlatterAddOnCategory(category);
 
   useEffect(() => {
     if (open) {
@@ -215,15 +237,48 @@ export function ItemEditorSheet({
                   id={`${formId}-category`}
                   name="category"
                   required
-                  defaultValue={item?.category ?? defaultCategory}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="rounded-xl border border-order-line/90 bg-white px-3 py-3 font-sans text-base text-order-brownInk outline-none transition focus:border-order-brownBtn/40 focus:ring-1 focus:ring-order-brownBtn/25"
                 >
-                  {TOPPING_CATEGORIES.map((c) => (
+                  {ADMIN_TOPPING_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
                       {labelForToppingCategory(c)}
                     </option>
                   ))}
                 </select>
+              </div>
+            ) : null}
+            {showPlatterPicker ? (
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor={`${formId}-stackId`}
+                  className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-order-taupe"
+                >
+                  For platter
+                </label>
+                {platterStacks.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-order-line/80 bg-order-bg/80 px-3 py-3 font-sans text-sm text-order-muted">
+                    Add a platter base first, then link toppings and drizzles to
+                    it.
+                  </p>
+                ) : (
+                  <select
+                    id={`${formId}-stackId`}
+                    name="stackId"
+                    required
+                    defaultValue={
+                      item?.stackId ?? defaultPlatterStackId ?? platterStacks[0]?.id ?? ""
+                    }
+                    className="rounded-xl border border-order-line/90 bg-white px-3 py-3 font-sans text-base text-order-brownInk outline-none transition focus:border-order-brownBtn/40 focus:ring-1 focus:ring-order-brownBtn/25"
+                  >
+                    {platterStacks.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             ) : null}
             {kind === "stack" ? (

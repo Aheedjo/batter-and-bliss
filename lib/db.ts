@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
  * client (e.g. new columns). Prevents Next.js dev HMR from reusing an old
  * PrismaClient that still expects the previous schema.
  */
-const PRISMA_SCHEMA_STAMP = "2026-02-postgresql-baseline";
+const PRISMA_SCHEMA_STAMP = "2026-07-topping-platter-stack";
 
 /** Default Prisma pool wait (s); dev HMR + parallel RSC can exhaust short pools. */
 const DEFAULT_POOL_TIMEOUT_S = 30;

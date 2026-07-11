@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type { AdminOrderListItem } from "@/lib/admin/admin-order-types";
 import { setOrderStatus } from "@/app/admin/orders/actions";
+import { MarkDeliveredControl } from "@/components/admin/mark-delivered-control";
 import { StatusBadge } from "@/components/admin/admin-order-badges";
 import {
   COMPLETED_ORDERS_VISIBLE_DAYS,
@@ -117,7 +118,7 @@ function PendingOrderCard({
               <Phone className="h-4 w-4" />
             </a>
             <span>
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
             </span>
           </div>
         </div>
@@ -234,8 +235,7 @@ function CompletedOrderCard({
     order.summaryLines,
     order.customization,
   );
-  const doneLabel =
-    order.status === "confirmed" ? "Delivered" : "Updated";
+  const doneLabel = order.status === "confirmed" ? "Confirmed" : "Updated";
   const placedLabel = formatOrderSlotLabel(
     order.placedAt,
     order.etaLabel,
@@ -266,7 +266,7 @@ function CompletedOrderCard({
               <Phone className="h-4 w-4" />
             </a>
             <span>
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
             </span>
           </div>
         </div>
@@ -303,6 +303,15 @@ function CompletedOrderCard({
           </p>
         </div>
       </div>
+
+      {order.status === "confirmed" ? (
+        <div className="relative z-20 mt-4 border-t border-order-line/60 pt-4 pointer-events-auto">
+          <MarkDeliveredControl
+            orderId={order.id}
+            deliveredAt={order.deliveredAt}
+          />
+        </div>
+      ) : null}
     </li>
   );
 }
@@ -354,9 +363,14 @@ export function OrdersAdminClient({
       list = list.filter((o) => o.status === "confirmed");
     else if (filter === "rejected")
       list = list.filter((o) => o.status === "rejected");
-    return [...list].sort(
-      (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-    );
+    return [...list].sort((a, b) => {
+      const aDelivered =
+        a.status === "confirmed" && a.deliveredAt != null;
+      const bDelivered =
+        b.status === "confirmed" && b.deliveredAt != null;
+      if (aDelivered !== bDelivered) return aDelivered ? 1 : -1;
+      return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+    });
   }, [orders, filter, renderedAtMs]);
 
   function submitStatus(id: string, status: "confirmed" | "rejected", reason?: string) {

@@ -23,6 +23,8 @@ export type TrackedOrder = {
   expectedBankSenderName?: string;
   /** When the customer tapped “I’ve sent the transfer” (client-side ack only). */
   transferReportedAt?: string;
+  /** When the shop marked the order delivered. */
+  deliveredAt?: string;
   /** Optional — for order updates only. */
   email?: string;
   /** Delivery address (delivery-only flow). */

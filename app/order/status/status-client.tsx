@@ -42,6 +42,13 @@ function StatusBadge({ order }: { order: TrackedOrder }) {
     );
   }
   if (order.status === "confirmed") {
+    if (order.deliveredAt) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-order-confirmed-bg px-3 py-1 font-sans text-xs font-semibold text-order-confirmed-ink ring-1 ring-order-confirmed-accent/80">
+          <span aria-hidden>✓</span> Delivered
+        </span>
+      );
+    }
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-sans text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-100 dark:ring-emerald-800/60">
         <span aria-hidden>✓</span> Confirmed
@@ -56,6 +63,15 @@ function StatusBadge({ order }: { order: TrackedOrder }) {
 }
 
 function OrderEtaOrRejection({ order }: { order: TrackedOrder }) {
+  if (order.status === "confirmed" && order.deliveredAt) {
+    return (
+      <div className="mt-5 rounded-2xl bg-order-confirmed-bg px-4 py-3 ring-1 ring-order-confirmed-accent/70">
+        <p className="font-sans text-sm font-medium text-order-confirmed-ink">
+          Your order has been delivered. Enjoy!
+        </p>
+      </div>
+    );
+  }
   if (order.status === "confirmed") {
     return (
       <div className="mt-5 rounded-2xl bg-emerald-50/90 px-4 py-3 ring-1 ring-emerald-200/70 dark:bg-emerald-950/30 dark:ring-emerald-800/50">

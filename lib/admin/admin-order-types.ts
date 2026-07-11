@@ -18,6 +18,7 @@ export type AdminOrderListItem = {
   total: number;
   etaLabel: string | null;
   rejectionReason: string | null;
+  deliveredAt: string | null;
   summaryLines: CartSummaryLine[] | null;
 };
 

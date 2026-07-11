@@ -1,16 +1,28 @@
 export const TOPPING_CATEGORIES = [
   "glazing",
-  "platter_glazing",
+  "platter_drizzle",
   "topping",
   "platter_topping",
   "syrup",
   "drink",
+  /** @deprecated Legacy rows only — not shown on the platter order flow */
+  "platter_glazing",
 ] as const;
 
 export type ToppingCategory = (typeof TOPPING_CATEGORIES)[number];
 
+/** Categories shown when creating/editing toppings in admin (no legacy). */
+export const ADMIN_TOPPING_CATEGORIES = TOPPING_CATEGORIES.filter(
+  (c) => c !== "platter_glazing",
+);
+
 export function isToppingCategory(s: string): s is ToppingCategory {
   return (TOPPING_CATEGORIES as readonly string[]).includes(s);
+}
+
+/** Platter customize add-ons — each row is tied to one platter base. */
+export function isPlatterAddOnCategory(c: string) {
+  return c === "platter_topping" || c === "platter_drizzle";
 }
 
 export function compareToppingCategory(a: string, b: string) {
@@ -25,8 +37,10 @@ export function labelForToppingCategory(c: string): string {
   switch (c) {
     case "glazing":
       return "Glazing";
+    case "platter_drizzle":
+      return "Platter drizzle";
     case "platter_glazing":
-      return "Platter glazing";
+      return "Platter glazing (legacy)";
     case "topping":
       return "Topping";
     case "platter_topping":

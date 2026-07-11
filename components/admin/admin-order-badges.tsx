@@ -1,7 +1,12 @@
 import { Check, X } from "lucide-react";
 import type { AdminOrderListItem } from "@/lib/admin/admin-order-types";
 
-export function StatusBadge({ status }: { status: AdminOrderListItem["status"] }) {
+export function StatusBadge({
+  status,
+}: {
+  status: AdminOrderListItem["status"];
+  deliveredAt?: string | null;
+}) {
   if (status === "pending") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-order-orange-bg px-2.5 py-1 font-sans text-[11px] font-semibold text-order-orange-text ring-1 ring-order-orange-text/10">

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { parseOptionalImageUrl } from "@/lib/validations/image-url";
 import { cuidSchema } from "@/lib/validations/ids";
 import { menuItemFormSchema } from "@/lib/validations/menu";
+import { isPlatterAddOnCategory } from "@/lib/order/menu-categories";
 
 const path = "/admin/menu";
 
@@ -22,6 +23,7 @@ function revalidateMenu() {
 
 const toppingCategorySchema = z.enum([
   "glazing",
+  "platter_drizzle",
   "platter_glazing",
   "topping",
   "platter_topping",
@@ -55,6 +57,31 @@ function parseStackKind(formData: FormData) {
   return p.success ? p.data : "pancake";
 }
 
+async function resolvePlatterStackId(
+  formData: FormData,
+  category: string,
+): Promise<{ stackId: string | null } | ActionState> {
+  if (!isPlatterAddOnCategory(category)) {
+    return { stackId: null };
+  }
+
+  const raw = formData.get("stackId")?.toString()?.trim() ?? "";
+  const parsed = cuidSchema.safeParse(raw);
+  if (!parsed.success) {
+    return fail("Pick which platter this add-on is for.");
+  }
+
+  const stack = await prisma.stack.findUnique({
+    where: { id: parsed.data },
+    select: { kind: true },
+  });
+  if (!stack || stack.kind !== "platter") {
+    return fail("That platter base was not found.");
+  }
+
+  return { stackId: parsed.data };
+}
+
 export async function createTopping(
   _prev: ActionState | undefined,
   formData: FormData,
@@ -71,17 +98,20 @@ export async function createTopping(
   }
   const category = parseToppingCategory(formData);
   const imageUrl = parseImageUrl(formData);
+  const platterStack = await resolvePlatterStackId(formData, category);
+  if ("ok" in platterStack && platterStack.ok === false) return platterStack;
+  const stackId = "stackId" in platterStack ? platterStack.stackId : null;
+  const data: Prisma.ToppingUncheckedCreateInput = {
+    name: parsed.data.name,
+    price: parsed.data.price,
+    category,
+    description: parsed.data.description,
+    imageUrl,
+    available: true,
+    stackId,
+  };
   try {
-    await prisma.topping.create({
-      data: {
-        name: parsed.data.name,
-        price: parsed.data.price,
-        category,
-        description: parsed.data.description,
-        imageUrl,
-        available: true,
-      },
-    });
+    await prisma.topping.create({ data });
   } catch (e) {
     console.error(e);
     return fail("Could not create topping.");
@@ -110,16 +140,21 @@ export async function updateTopping(
   }
   const category = parseToppingCategory(formData);
   const imageUrl = parseImageUrl(formData);
+  const platterStack = await resolvePlatterStackId(formData, category);
+  if ("ok" in platterStack && platterStack.ok === false) return platterStack;
+  const stackId = "stackId" in platterStack ? platterStack.stackId : null;
+  const data: Prisma.ToppingUncheckedUpdateInput = {
+    name: parsed.data.name,
+    price: parsed.data.price,
+    category,
+    description: parsed.data.description,
+    imageUrl,
+    stackId,
+  };
   try {
     await prisma.topping.update({
       where: { id: idParsed.data },
-      data: {
-        name: parsed.data.name,
-        price: parsed.data.price,
-        category,
-        description: parsed.data.description,
-        imageUrl,
-      },
+      data,
     });
   } catch (e) {
     if (isNotFound(e)) return fail("Item not found.");

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { AdminOrderDetail } from "@/lib/admin/admin-order-types";
 import { setOrderStatus } from "@/app/admin/orders/actions";
+import { MarkDeliveredControl } from "@/components/admin/mark-delivered-control";
 import { StatusBadge } from "@/components/admin/admin-order-badges";
 import type { CartSummaryLine } from "@/lib/order/pricing";
 import { formatPrice } from "@/lib/order/money";
@@ -127,7 +128,7 @@ export function OrderDetailClient({
               </h1>
               <p className="mt-1 font-sans text-sm text-order-muted">{placedSubtitle}</p>
             </div>
-            <StatusBadge status={order.status} />
+            <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
           </div>
         </div>
       </div>
@@ -271,6 +272,35 @@ export function OrderDetailClient({
             >
               Accept order
             </button>
+          </div>
+        </section>
+      ) : null}
+
+      {order.status === "confirmed" ? (
+        <section className="space-y-2 border-t border-order-line/50 pt-6">
+          <h2 className="font-serif text-lg font-semibold text-order-brownInk">
+            Delivered?
+          </h2>
+          <div className="rounded-[1.35rem] border border-order-line/80 bg-order-card p-4 shadow-soft ring-1 ring-white/90">
+            <MarkDeliveredControl
+              orderId={order.id}
+              deliveredAt={order.deliveredAt}
+            />
+            {order.deliveredAt ? (
+              <p className="mt-2 font-sans text-xs text-order-muted">
+                Marked delivered{" "}
+                {new Intl.DateTimeFormat(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }).format(new Date(order.deliveredAt))}
+              </p>
+            ) : (
+              <p className="mt-2 font-sans text-xs text-order-muted">
+                Check this when the order has reached the customer.
+              </p>
+            )}
           </div>
         </section>
       ) : null}

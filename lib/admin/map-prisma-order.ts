@@ -32,6 +32,7 @@ export function orderToAdminListItem(o: Order): AdminOrderListItem {
     total: o.total,
     etaLabel: o.etaLabel,
     rejectionReason: o.rejectionReason,
+    deliveredAt: o.deliveredAt,
     summaryLines: parseSummaryLines(o.summaryLines),
   };
 }

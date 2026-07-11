@@ -12,13 +12,16 @@ datasource db {
 model Topping {
   id          String   @id @default(cuid())
   name        String
-  /// glazing | platter_glazing | topping | platter_topping | syrup | drink
+  /// glazing | platter_drizzle | topping | platter_topping | syrup | drink
   category    String   @default("topping")
   price       Float?
   description String?
   /// Public URL (Vercel Blob or /uploads in local dev).
   imageUrl    String?
   available   Boolean  @default(true)
+  /// Platter add-ons only — which platter base this belongs to.
+  stackId     String?
+  stack       Stack?   @relation(fields: [stackId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -43,6 +46,7 @@ model Stack {
   /// Public URL (Vercel Blob or /uploads in local dev).
   imageUrl    String?
   available   Boolean  @default(true)
+  platterAddOns Topping[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -82,5 +86,7 @@ model Order {
   etaLabel               String?
   rejectionReason        String?
   transferReportedAt     String?
+  /// ISO timestamp when the shop marked this order delivered (confirmed orders only).
+  deliveredAt            String?
   summaryLines           Json?
 }

@@ -7,6 +7,7 @@ import type { ActionState } from "@/app/admin/menu/actions";
 import { ItemEditorSheet, type MenuEditorItem, type MenuKind } from "./item-editor-sheet";
 import { MenuProductCard } from "./menu-product-card";
 import { toppingImageUrl } from "@/lib/order/topping-image";
+import { labelForToppingCategory } from "@/lib/order/menu-categories";
 import { STACKS } from "@/lib/order/stacks";
 
 export type MenuStackRow = {
@@ -27,6 +28,7 @@ export type MenuToppingRow = {
   available: boolean;
   description: string | null;
   imageUrl: string | null;
+  stackId: string | null;
 };
 
 export type MenuExtraRow = {
@@ -38,6 +40,7 @@ export type MenuExtraRow = {
 };
 
 type Tab = "pancakes" | "platters" | "toppings" | "drinks" | "extras";
+type AddTarget = Tab | "platter_topping" | "platter_drizzle";
 
 type Props = {
   stacks: MenuStackRow[];
@@ -86,9 +89,7 @@ type Props = {
 
 const TOPPING_TAB_CATEGORIES = [
   "glazing",
-  "platter_glazing",
   "topping",
-  "platter_topping",
   "syrup",
 ] as const;
 
@@ -128,7 +129,7 @@ export function MenuProductsClient({
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("toppings");
-  const [addTarget, setAddTarget] = useState<Tab>("toppings");
+  const [addTarget, setAddTarget] = useState<AddTarget>("toppings");
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<{
     open: boolean;
@@ -136,6 +137,7 @@ export function MenuProductsClient({
     kind: MenuKind;
     item: MenuEditorItem | null;
     defaultCategory: string;
+    defaultPlatterStackId?: string;
   }>({
     open: false,
     mode: "create",
@@ -144,6 +146,29 @@ export function MenuProductsClient({
     defaultCategory: "topping",
   });
   const [sheetNonce, setSheetNonce] = useState(0);
+
+  const platterStacks = useMemo(
+    () => stacks.filter((s) => s.kind === "platter"),
+    [stacks],
+  );
+
+  const stackNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of stacks) map.set(s.id, s.name);
+    return map;
+  }, [stacks]);
+
+  const platterAddOns = useMemo(
+    () =>
+      toppings.filter(
+        (t) => t.category === "platter_topping" || t.category === "platter_drizzle",
+      ),
+    [toppings],
+  );
+
+  const filteredPlatterAddOns = useMemo(() => {
+    return platterAddOns.filter((t) => matchesSearch(t.name, search));
+  }, [platterAddOns, search]);
 
   const toppingAddOns = useMemo(
     () =>
@@ -216,6 +241,17 @@ export function MenuProductsClient({
       });
       return;
     }
+    if (addTarget === "platter_topping" || addTarget === "platter_drizzle") {
+      setEditor({
+        open: true,
+        mode: "create",
+        kind: "topping",
+        item: null,
+        defaultCategory: addTarget,
+        defaultPlatterStackId: platterStacks[0]?.id,
+      });
+      return;
+    }
     if (addTarget === "extras") {
       setEditor({
         open: true,
@@ -268,6 +304,7 @@ export function MenuProductsClient({
         category: row.category,
         description: row.description,
         imageUrl: row.imageUrl,
+        stackId: row.stackId,
       },
       defaultCategory: row.category,
     });
@@ -380,7 +417,17 @@ export function MenuProductsClient({
               type="button"
               onClick={() => {
                 setTab(id);
-                setAddTarget(id);
+                setAddTarget(
+                  id === "platters"
+                    ? "platters"
+                    : id === "drinks"
+                      ? "drinks"
+                      : id === "extras"
+                        ? "extras"
+                        : id === "pancakes"
+                          ? "pancakes"
+                          : "toppings",
+                );
               }}
               className={`shrink-0 rounded-full px-4 py-2 font-sans text-xs font-semibold transition sm:text-[13px] ${
                 on
@@ -401,15 +448,17 @@ export function MenuProductsClient({
           </span>
           <select
             value={addTarget}
-            onChange={(e) => setAddTarget(e.target.value as Tab)}
+            onChange={(e) => setAddTarget(e.target.value as AddTarget)}
             className="min-w-0 rounded-full border border-order-line/80 bg-order-bg px-3 py-1.5 font-sans text-xs font-semibold text-order-brownInk outline-none transition focus:border-order-brownBtn/35 focus:ring-1 focus:ring-order-brownBtn/20"
             aria-label="Choose category to add"
           >
-            <option value="pancakes">Pancakes</option>
-            <option value="platters">Platters</option>
-            <option value="toppings">Toppings</option>
-            <option value="drinks">Drinks</option>
-            <option value="extras">Extras</option>
+            <option value="pancakes">Pancake base</option>
+            <option value="platters">Platter base</option>
+            <option value="platter_topping">Platter topping</option>
+            <option value="platter_drizzle">Platter drizzle</option>
+            <option value="toppings">Pancake add-on</option>
+            <option value="drinks">Drink</option>
+            <option value="extras">Extra</option>
           </select>
         </div>
         <button
@@ -461,26 +510,90 @@ export function MenuProductsClient({
             ))
           )
         ) : tab === "platters" ? (
-          filteredPlatters.length === 0 ? (
-            <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-10 text-center font-sans text-sm text-order-muted">
-              No platters match your search.
-            </p>
-          ) : (
-            filteredPlatters.map((s) => (
-              <MenuProductCard
-                key={s.id}
-                variant="db"
-                id={s.id}
-                name={s.name}
-                price={s.price}
-                available={s.available}
-                imageUrl={stackPreviewImage(s)}
-                imageAlt={s.name}
-                onEdit={() => openEditStack(s)}
-                onToggleAvailable={refreshToggleStack}
-              />
-            ))
-          )
+          <>
+            {filteredPlatters.length === 0 && filteredPlatterAddOns.length === 0 ? (
+              <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-10 text-center font-sans text-sm text-order-muted">
+                No platters match your search.
+              </p>
+            ) : (
+              <>
+                {filteredPlatters.length > 0 ? (
+                  <div className="space-y-6">
+                    {filteredPlatters.map((platter) => {
+                      const addOns = filteredPlatterAddOns.filter(
+                        (t) => t.stackId === platter.id,
+                      );
+                      return (
+                        <div key={platter.id} className="space-y-2.5">
+                          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-order-taupe">
+                            {platter.name}
+                          </p>
+                          <MenuProductCard
+                            variant="db"
+                            id={platter.id}
+                            name={platter.name}
+                            price={platter.price}
+                            available={platter.available}
+                            imageUrl={stackPreviewImage(platter)}
+                            imageAlt={platter.name}
+                            onEdit={() => openEditStack(platter)}
+                            onToggleAvailable={refreshToggleStack}
+                          />
+                          {addOns.length > 0 ? (
+                            <div className="ml-3 space-y-2 border-l-2 border-order-line/60 pl-3 sm:ml-4 sm:pl-4">
+                              {addOns.map((row) => (
+                                <MenuProductCard
+                                  key={row.id}
+                                  variant="db"
+                                  id={row.id}
+                                  name={`${row.name} · ${labelForToppingCategory(row.category)}`}
+                                  price={row.price}
+                                  available={row.available}
+                                  imageUrl={toppingPreviewImage(row)}
+                                  imageAlt={row.name}
+                                  onEdit={() => openEditTopping(row)}
+                                  onToggleAvailable={refreshToggleTopping}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="ml-3 border-l-2 border-order-line/40 pl-3 font-sans text-xs text-order-muted sm:ml-4 sm:pl-4">
+                              No toppings or drizzles linked yet.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                {filteredPlatterAddOns.some(
+                  (t) => !t.stackId || !stackNameById.has(t.stackId),
+                ) ? (
+                  <div className="mt-6 space-y-2.5">
+                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-order-taupe">
+                      Unassigned platter add-ons
+                    </p>
+                    {filteredPlatterAddOns
+                      .filter((t) => !t.stackId || !stackNameById.has(t.stackId))
+                      .map((row) => (
+                        <MenuProductCard
+                          key={row.id}
+                          variant="db"
+                          id={row.id}
+                          name={`${row.name} · ${labelForToppingCategory(row.category)}`}
+                          price={row.price}
+                          available={row.available}
+                          imageUrl={toppingPreviewImage(row)}
+                          imageAlt={row.name}
+                          onEdit={() => openEditTopping(row)}
+                          onToggleAvailable={refreshToggleTopping}
+                        />
+                      ))}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </>
         ) : tab === "toppings" ? (
           filteredToppingAddOns.length === 0 ? (
             <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-10 text-center font-sans text-sm text-order-muted">
@@ -550,6 +663,8 @@ export function MenuProductsClient({
         mode={editor.mode}
         item={editor.item}
         defaultCategory={editor.defaultCategory}
+        defaultPlatterStackId={editor.defaultPlatterStackId}
+        platterStacks={platterStacks.map((s) => ({ id: s.id, name: s.name }))}
         onClose={() => setEditor((e) => ({ ...e, open: false }))}
         saveAction={saveAction}
         deleteAction={editor.mode === "edit" ? deleteAction : undefined}

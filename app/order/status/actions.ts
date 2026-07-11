@@ -11,6 +11,7 @@ export type CustomerOrderStatusRow = {
   etaLabel: string | null;
   rejectionReason: string | null;
   transferReportedAt: string | null;
+  deliveredAt: string | null;
 };
 
 /**
@@ -32,6 +33,7 @@ export async function getCustomerOrderStatuses(
       etaLabel: true,
       rejectionReason: true,
       transferReportedAt: true,
+      deliveredAt: true,
     },
   });
 
@@ -44,5 +46,6 @@ export async function getCustomerOrderStatuses(
     etaLabel: r.etaLabel,
     rejectionReason: r.rejectionReason,
     transferReportedAt: r.transferReportedAt,
+    deliveredAt: r.deliveredAt,
   }));
 }

@@ -41,6 +41,7 @@ export default async function AdminMenuPage() {
         available: true,
         description: true,
         imageUrl: true,
+        stackId: true,
       },
     }),
     prisma.extra.findMany({

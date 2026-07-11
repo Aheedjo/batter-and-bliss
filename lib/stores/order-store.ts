@@ -51,6 +51,7 @@ type OrderState = {
       etaLabel: string | null;
       rejectionReason: string | null;
       transferReportedAt: string | null;
+      deliveredAt: string | null;
     }>,
   ) => void;
   setTrackSelectedRef: (ref: string | null) => void;
@@ -213,11 +214,14 @@ export const useOrderStore = create<OrderState>()(
             const nextRejection = fromServer.rejectionReason ?? undefined;
             const nextReportedAt =
               fromServer.transferReportedAt ?? o.transferReportedAt;
+            const nextDeliveredAt =
+              fromServer.deliveredAt ?? o.deliveredAt;
             if (
               o.status === nextStatus &&
               o.etaLabel === nextEta &&
               o.rejectionReason === nextRejection &&
-              o.transferReportedAt === nextReportedAt
+              o.transferReportedAt === nextReportedAt &&
+              o.deliveredAt === nextDeliveredAt
             ) {
               return o;
             }
@@ -228,6 +232,7 @@ export const useOrderStore = create<OrderState>()(
               etaLabel: nextEta,
               rejectionReason: nextRejection,
               transferReportedAt: nextReportedAt,
+              deliveredAt: nextDeliveredAt,
             };
           });
           return changed ? { activeOrders } : s;
