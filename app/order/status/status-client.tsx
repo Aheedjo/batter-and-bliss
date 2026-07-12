@@ -233,7 +233,7 @@ function ActiveOrderReceipt({
         <ul className="mt-3 space-y-4">
           {order.summaryLines.map((item, i) => (
             <CartSummaryLineRow
-              key={`${item.kind}-${i}-${item.kind === "pancake" ? item.title : item.name}`}
+              key={`${item.kind}-${i}-${item.kind === "pancake" ? item.title : item.kind === "drink" ? item.name : item.label}`}
               item={item}
             />
           ))}
@@ -268,10 +268,14 @@ function ActiveOrderReceipt({
         </div>
       )}
       {order.note ? (
-        <p className="mt-3 flex items-center gap-1 rounded-xl bg-order-bg/80 px-3 py-2 font-sans text-xs text-order-muted ring-1 ring-order-line/40">
-          <span aria-hidden>✎</span>
-          {order.note}
-        </p>
+        <div className="mt-3 rounded-xl bg-order-bg/80 px-3 py-2.5 ring-1 ring-order-line/40">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-order-muted">
+            Box card message
+          </p>
+          <p className="mt-1 font-sans text-xs leading-relaxed text-order-brownInk">
+            {order.note}
+          </p>
+        </div>
       ) : null}
       {order.buyerPhone ? (
         <div className="mt-3 rounded-xl bg-order-bg/80 px-3 py-2.5 ring-1 ring-order-line/40">

@@ -13,6 +13,7 @@ import { StickyAction } from "@/components/order/sticky-action";
 import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
 import { computeCartTotal } from "@/lib/order/pricing";
+import { withBoxNoteFeeLine } from "@/lib/order/box-note-fee";
 import { formatPrice } from "@/lib/order/money";
 import { useOrderStore } from "@/lib/stores/order-store";
 
@@ -55,6 +56,7 @@ type Props = {
     blockedMessage: string | null;
     orderForDayLabel: string | null;
   };
+  boxNoteFee: number;
 };
 
 function Subheading({
@@ -86,6 +88,7 @@ export function CheckoutClient({
   stacks,
   dailyCapacity,
   intake,
+  boxNoteFee,
 }: Props) {
   const router = useRouter();
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
@@ -132,9 +135,20 @@ export function CheckoutClient({
     [stacks],
   );
 
-  const { total, lines: detailLines, summaryLines } = useMemo(
+  const cartBase = useMemo(
     () => computeCartTotal(pancakeLines, drinkQuantities, pricedStacks, catalog),
     [pancakeLines, drinkQuantities, pricedStacks, catalog],
+  );
+
+  const { total, summaryLines } = useMemo(
+    () =>
+      withBoxNoteFeeLine(
+        cartBase.summaryLines,
+        cartBase.total,
+        note,
+        boxNoteFee,
+      ),
+    [cartBase.summaryLines, cartBase.total, note, boxNoteFee],
   );
 
   const first = pancakeLines[0];
@@ -246,7 +260,7 @@ export function CheckoutClient({
       ? `${pancakeLines.length} pancake orders`
       : firstStack?.name ?? "Pancake order";
 
-  const customization = detailLines.join(" · ") || "—";
+  const customization = cartBase.lines.join(" · ") || "—";
 
   function placeOrder() {
     if (!canPlace || placing) return;
@@ -366,14 +380,14 @@ export function CheckoutClient({
           <ul className="space-y-4">
             {summaryLines.map((item, i) => (
               <CartSummaryLineRow
-                key={`${item.kind}-${i}-${item.kind === "pancake" ? item.title : item.name}`}
+                key={`${item.kind}-${i}-${item.kind === "pancake" ? item.title : item.kind === "drink" ? item.name : item.label}`}
                 item={item}
               />
             ))}
           </ul>
           {note ? (
             <p className="mt-4 rounded-xl bg-order-bg/80 px-3 py-2.5 font-sans text-[12px] leading-relaxed text-order-taupe ring-1 ring-order-line/40">
-              <span className="font-semibold text-order-muted">Note</span>
+              <span className="font-semibold text-order-muted">Box card</span>
               <span className="mx-1 text-order-line" aria-hidden>
                 ·
               </span>
@@ -393,14 +407,23 @@ export function CheckoutClient({
 
         <Subheading
           kicker="Optional"
-          title="Gift note or special instruction"
+          title="Message for the box card"
         />
         <div className="mt-4 rounded-[1.25rem] bg-order-card p-4 shadow-soft ring-1 ring-order-line/50">
+          <p className="font-sans text-[12px] leading-relaxed text-order-taupe">
+            We attach a small card to the box with your words—like a gift tag.
+            Not for delivery directions or other order notes.
+          </p>
           <label
             htmlFor="checkout-note"
-            className="font-sans text-[11px] font-semibold uppercase tracking-wide text-order-muted"
+            className="mt-3 block font-sans text-[11px] font-semibold uppercase tracking-wide text-order-muted"
           >
-            Note (optional)
+            What to write on the card
+            {boxNoteFee > 0 ? (
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-order-taupe">
+                — {formatPrice(boxNoteFee)} when added
+              </span>
+            ) : null}
           </label>
           <textarea
             id="checkout-note"
@@ -408,8 +431,8 @@ export function CheckoutClient({
             onChange={(e) => setNote(e.target.value)}
             maxLength={200}
             rows={3}
-            placeholder="e.g. Happy Birthday Aisha"
-            className={textareaClass}
+            placeholder="e.g. Happy Birthday, Aisha! Love, Mum"
+            className={`${textareaClass} mt-2`}
           />
           <p className="mt-1 font-sans text-[10px] text-order-taupe">
             {note.length} / 200

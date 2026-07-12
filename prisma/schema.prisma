@@ -63,6 +63,8 @@ model ShopSetting {
   serviceWeekdaysJson String @default("[3]")
   /// Homepage hero image (public URL). Null = use built-in default.
   heroImageUrl  String?
+  /// Naira fee when customer adds a box message at checkout. 0 = free.
+  boxNoteFee    Int      @default(500)
   updatedAt     DateTime @updatedAt
 }
 

@@ -74,6 +74,24 @@ export function formatPlacedSubtitle(iso: string, nowMs: number) {
   }
 }
 
+/** Compact stamp for printed packing slips. */
+export function formatReceiptTimestamp(iso: string) {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return "";
+  }
+}
+
 /** Right side of time bar for pending orders — lightweight queue hint. Pass `nowMs` from the server render for stable hydration. */
 export function queueHint(placedAt: string, nowMs: number) {
   const t = Date.parse(placedAt);
@@ -122,7 +140,9 @@ export function summaryParts(lines: CartSummaryLine[] | null, fallback: string) 
   if (!lines?.length) {
     return { primary: fallback, extraPills: [] as string[] };
   }
-  const bits = lines.map((l) =>
+  const bits = lines
+    .filter((l) => l.kind !== "fee")
+    .map((l) =>
     l.kind === "pancake"
       ? `${l.title}${l.details ? ` · ${l.details}` : ""}`
       : `${l.qty}× ${l.name}`,

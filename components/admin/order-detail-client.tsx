@@ -16,11 +16,27 @@ import { useState, useTransition } from "react";
 import type { AdminOrderDetail } from "@/lib/admin/admin-order-types";
 import { setOrderStatus } from "@/app/admin/orders/actions";
 import { MarkDeliveredControl } from "@/components/admin/mark-delivered-control";
+import { OrderReceiptButton } from "@/components/admin/order-receipt-modal";
 import { StatusBadge } from "@/components/admin/admin-order-badges";
 import type { CartSummaryLine } from "@/lib/order/pricing";
 import { formatPrice } from "@/lib/order/money";
 
 function ItemBlock({ line, index }: { line: CartSummaryLine; index: number }) {
+  if (line.kind === "fee") {
+    return (
+      <div
+        key={index}
+        className="flex items-start justify-between gap-3 border-b border-order-line/50 py-5 last:border-b-0"
+      >
+        <p className="font-sans text-sm font-semibold text-order-brownInk">
+          {line.label}
+        </p>
+        <p className="shrink-0 font-serif text-sm font-semibold tabular-nums text-order-brownInk">
+          {formatPrice(line.lineTotal)}
+        </p>
+      </div>
+    );
+  }
   if (line.kind === "pancake") {
     return (
       <div key={index} className="border-b border-order-line/50 py-5 last:border-b-0">
@@ -128,7 +144,12 @@ export function OrderDetailClient({
               </h1>
               <p className="mt-1 font-sans text-sm text-order-muted">{placedSubtitle}</p>
             </div>
-            <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
+            <div className="flex shrink-0 items-center gap-2">
+              {order.status !== "rejected" ? (
+                <OrderReceiptButton order={order} compact />
+              ) : null}
+              <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
+            </div>
           </div>
         </div>
       </div>
@@ -183,7 +204,9 @@ export function OrderDetailClient({
       {showNote ? (
         <section className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-serif text-lg font-semibold text-order-brownInk">Box note</h2>
+            <h2 className="font-serif text-lg font-semibold text-order-brownInk">
+              Box card message
+            </h2>
             <span className="rounded-full bg-order-brownBtn px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-wide text-white">
               Important
             </span>
@@ -200,7 +223,7 @@ export function OrderDetailClient({
             </p>
             <p className="relative mt-4 flex items-center gap-2 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-order-taupe">
               <PenLine className="h-3.5 w-3.5" aria-hidden />
-              Must be written on box
+              Write on the card attached to the box
             </p>
           </div>
         </section>

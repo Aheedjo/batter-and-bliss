@@ -7,7 +7,8 @@ export type PricedStackItem = { id: string; name: string; price: number };
 /** Structured rows for checkout / receipts; flat `lines` stays for stored customization text. */
 export type CartSummaryLine =
   | { kind: "pancake"; title: string; details: string | null; lineTotal: number }
-  | { kind: "drink"; name: string; qty: number; lineTotal: number };
+  | { kind: "drink"; name: string; qty: number; lineTotal: number }
+  | { kind: "fee"; label: string; lineTotal: number };
 
 export function computeCartTotal(
   pancakeLines: PancakeLine[],

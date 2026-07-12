@@ -14,6 +14,7 @@ import { useMemo, useState, useTransition } from "react";
 import type { AdminOrderListItem } from "@/lib/admin/admin-order-types";
 import { setOrderStatus } from "@/app/admin/orders/actions";
 import { MarkDeliveredControl } from "@/components/admin/mark-delivered-control";
+import { OrderReceiptButton } from "@/components/admin/order-receipt-modal";
 import { StatusBadge } from "@/components/admin/admin-order-badges";
 import {
   COMPLETED_ORDERS_VISIBLE_DAYS,
@@ -117,6 +118,7 @@ function PendingOrderCard({
             >
               <Phone className="h-4 w-4" />
             </a>
+            <OrderReceiptButton order={order} compact />
             <span>
               <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
             </span>
@@ -157,7 +159,8 @@ function PendingOrderCard({
 
           {order.note ? (
             <p className="font-sans text-xs text-order-muted">
-              <span className="font-semibold text-order-taupe">Note</span> {order.note}
+              <span className="font-semibold text-order-taupe">Box card</span>{" "}
+              {order.note}
             </p>
           ) : null}
 
@@ -265,6 +268,9 @@ function CompletedOrderCard({
             >
               <Phone className="h-4 w-4" />
             </a>
+            {order.status !== "rejected" ? (
+              <OrderReceiptButton order={order} compact />
+            ) : null}
             <span>
               <StatusBadge status={order.status} deliveredAt={order.deliveredAt} />
             </span>

@@ -13,6 +13,11 @@ const summaryLineSchema = z.discriminatedUnion("kind", [
     qty: z.number().int().positive(),
     lineTotal: z.number(),
   }),
+  z.object({
+    kind: z.literal("fee"),
+    label: z.string().max(120),
+    lineTotal: z.number().nonnegative(),
+  }),
 ]);
 
 export const checkoutOrderPayloadSchema = z.object({

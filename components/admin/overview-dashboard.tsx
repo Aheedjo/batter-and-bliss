@@ -21,6 +21,7 @@ import {
   summaryParts,
 } from "@/lib/admin/order-display";
 import { DailyCapSettings } from "@/components/admin/daily-cap-settings";
+import { BoxNoteFeeSettings } from "@/components/admin/box-note-fee-settings";
 import { HeroImageSettings } from "@/components/admin/hero-image-settings";
 import { OrderIntakeSettingsPanel } from "@/components/admin/order-intake-settings";
 import type { PublicOrderIntakeSnapshot } from "@/lib/order/order-intake";
@@ -39,6 +40,7 @@ export function OverviewDashboard({
   dailyCap,
   intakeSnapshot,
   heroImageUrl,
+  boxNoteFee,
 }: {
   stats: OverviewStats;
   recentPending: AdminOrderListItem[];
@@ -50,6 +52,7 @@ export function OverviewDashboard({
   };
   intakeSnapshot: PublicOrderIntakeSnapshot;
   heroImageUrl: string | null;
+  boxNoteFee: number;
 }) {
   const router = useRouter();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -104,6 +107,8 @@ export function OverviewDashboard({
         transferredSlotsToday={dailyCap.transferredSlotsToday}
         capWindowSummary={dailyCap.capWindowSummary}
       />
+
+      <BoxNoteFeeSettings boxNoteFee={boxNoteFee} />
 
       <OrderIntakeSettingsPanel
         snapshot={intakeSnapshot}

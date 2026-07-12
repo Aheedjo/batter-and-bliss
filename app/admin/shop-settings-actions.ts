@@ -44,6 +44,35 @@ export async function updateDailyOrderCap(
   return { ok: true };
 }
 
+export async function updateBoxNoteFee(
+  _prev: ShopSettingsActionState | undefined,
+  formData: FormData,
+): Promise<ShopSettingsActionState> {
+  const raw = formData.get("boxNoteFee")?.toString().trim() ?? "";
+  let boxNoteFee = 0;
+  if (raw !== "") {
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0 || n > 99_999) {
+      return fail("Enter 0 for free, or a whole number up to 99,999.");
+    }
+    boxNoteFee = n;
+  }
+
+  try {
+    await prisma.shopSetting.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID, dailyOrderCap: null, boxNoteFee },
+      update: { boxNoteFee },
+    });
+  } catch (e) {
+    console.error(e);
+    return fail("Could not save box message fee.");
+  }
+  revalidatePath("/admin");
+  revalidatePath("/order/checkout");
+  return { ok: true };
+}
+
 export async function updateOrderIntakeSettings(
   _prev: ShopSettingsActionState | undefined,
   formData: FormData,

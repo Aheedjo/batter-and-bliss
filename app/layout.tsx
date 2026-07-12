@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   title: "Batter & Bliss",
   description:
     "Premium home desserts delivered fresh to your door. Made with love, served with bliss.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

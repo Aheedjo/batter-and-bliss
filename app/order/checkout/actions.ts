@@ -11,6 +11,10 @@ import {
   wouldExceedPancakeCap,
 } from "@/lib/order/daily-order-cap";
 import {
+  getBoxNoteFee,
+  sumSummaryLineTotals,
+} from "@/lib/order/box-note-fee";
+import {
   DRINKS_ONLY_STACK_ID,
   isDrinksOnlySummary,
 } from "@/lib/order/drinks-only";
@@ -151,6 +155,23 @@ export async function createCheckoutOrder(
   const d: CheckoutOrderPayload = parsed.data;
   const emailTrim = d.email?.trim();
   const drinksOnly = isDrinksOnlySummary(d.summaryLines);
+
+  const lineTotal = sumSummaryLineTotals(d.summaryLines);
+  if (Math.abs(lineTotal - d.total) > 0.01) {
+    return fail("Order total is out of date. Refresh checkout and try again.");
+  }
+
+  const boxNoteFee = await getBoxNoteFee();
+  const noteFeeLine = d.summaryLines.find((l) => l.kind === "fee");
+  const expectedNoteCharge =
+    d.note.trim() && boxNoteFee > 0 ? boxNoteFee : 0;
+  if (noteFeeLine) {
+    if (noteFeeLine.kind !== "fee" || noteFeeLine.lineTotal !== expectedNoteCharge) {
+      return fail("Box card message fee is out of date. Refresh checkout and try again.");
+    }
+  } else if (expectedNoteCharge > 0) {
+    return fail("Add the box card message fee or refresh checkout and try again.");
+  }
 
   try {
     // Drinks-only orders bypass the kitchen-day gate and the daily cap.

@@ -24,6 +24,21 @@ export function CartSummaryLineRow({ item }: { item: CartSummaryLine }) {
     );
   }
 
+  if (item.kind === "fee") {
+    return (
+      <li>
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 flex-1 font-serif text-[16px] font-semibold leading-snug text-order-brownInk">
+            {item.label}
+          </p>
+          <span className="shrink-0 font-serif text-[15px] font-semibold tabular-nums tracking-tight text-order-brownInk">
+            {formatPrice(item.lineTotal)}
+          </span>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li>
       <div className="flex items-start justify-between gap-3">

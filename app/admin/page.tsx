@@ -62,6 +62,7 @@ export default async function AdminOverviewPage() {
       }}
       intakeSnapshot={intakeSnapshot}
       heroImageUrl={shopRow?.heroImageUrl ?? null}
+      boxNoteFee={shopRow?.boxNoteFee ?? 500}
     />
   );
 }
