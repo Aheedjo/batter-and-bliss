@@ -111,7 +111,7 @@ function StackClientInner({ stacks }: { stacks: PublicStack[] }) {
           description={
             changeBaseMode
               ? "Update the base for this order, then save to return to your review."
-              : "Pick a base for a new order. Pancakes include glazing, toppings, and syrups; platters use platter toppings and drizzles only."
+              : "Pick a base for a new order. Pancakes include glazing, toppings, and syrups; platters include up to 2 platter toppings."
           }
           className="mb-9"
         />

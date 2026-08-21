@@ -31,6 +31,8 @@ type OrderState = {
   addPancakeLine: (stackId: StackId) => void;
   updateLineStack: (lineId: string, stackId: StackId) => void;
   toggleLineAddOn: (addOnId: string) => void;
+  /** Like `toggleLineAddOn`, but ignores new selections once `max` are already chosen. */
+  toggleLineAddOnCapped: (addOnId: string, max: number) => void;
   /** At most one of `exclusiveIds` may be chosen; clears Random Bliss when used. */
   toggleExclusiveAddOnGroup: (
     exclusiveIds: readonly string[],
@@ -115,6 +117,25 @@ export const useOrderStore = create<OrderState>()(
                 };
               }
               const has = line.addOnIds.includes(addOnId);
+              return {
+                ...line,
+                addOnIds: has
+                  ? line.addOnIds.filter((x) => x !== addOnId)
+                  : [...line.addOnIds, addOnId],
+              };
+            }),
+          };
+        }),
+
+      toggleLineAddOnCapped: (addOnId, max) =>
+        set((s) => {
+          const lid = s.editingLineId;
+          if (!lid) return s;
+          return {
+            pancakeLines: s.pancakeLines.map((line) => {
+              if (line.id !== lid) return line;
+              const has = line.addOnIds.includes(addOnId);
+              if (!has && line.addOnIds.length >= max) return line;
               return {
                 ...line,
                 addOnIds: has

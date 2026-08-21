@@ -10,6 +10,8 @@ import type { PublicStack } from "@/lib/data/stacks-public";
 import type { PublicTopping } from "@/lib/data/toppings-public";
 import { useOrderStore } from "@/lib/stores/order-store";
 
+const PLATTER_MAX_TOPPINGS = 2;
+
 const btnPrimary =
   "w-full rounded-full bg-order-brownBtn py-[1.05rem] font-serif text-[15px] font-semibold tracking-[0.01em] text-white shadow-order-btn ring-1 ring-order-brownBtn/20 transition hover:brightness-110 active:scale-[0.99]";
 
@@ -33,7 +35,7 @@ export function PlatterCustomizeClient({
   const router = useRouter();
   const pancakeLines = useOrderStore((s) => s.pancakeLines);
   const editingLineId = useOrderStore((s) => s.editingLineId);
-  const toggleLineAddOn = useOrderStore((s) => s.toggleLineAddOn);
+  const toggleLineAddOnCapped = useOrderStore((s) => s.toggleLineAddOnCapped);
 
   const line = useMemo(
     () => pancakeLines.find((l) => l.id === editingLineId),
@@ -57,10 +59,6 @@ export function PlatterCustomizeClient({
     () => forThisPlatter.filter((t) => t.category === "platter_topping"),
     [forThisPlatter],
   );
-  const platterDrizzles = useMemo(
-    () => forThisPlatter.filter((t) => t.category === "platter_drizzle"),
-    [forThisPlatter],
-  );
 
   useEffect(() => {
     if (pancakeLines.length === 0) {
@@ -78,7 +76,8 @@ export function PlatterCustomizeClient({
 
   if (!line || !editingLineId || stack?.kind !== "platter") return null;
 
-  const hasOptions = platterDrizzles.length > 0 || platterToppings.length > 0;
+  const hasOptions = platterToppings.length > 0;
+  const toppingsAtMax = line.addOnIds.length >= PLATTER_MAX_TOPPINGS;
 
   return (
     <>
@@ -88,7 +87,7 @@ export function PlatterCustomizeClient({
         <SectionHeading
           eyebrow="Platter"
           title={stack.name}
-          description="Pick toppings and drizzles for this platter. Everything here is optional."
+          description="Pick up to 2 toppings for this platter."
           italic
           className="mb-6"
         />
@@ -97,56 +96,36 @@ export function PlatterCustomizeClient({
           <>
             <SectionLabel>Toppings</SectionLabel>
             <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Choose as many as you like.
+              Choose up to {PLATTER_MAX_TOPPINGS}.
             </p>
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
-              {platterToppings.map((t) => (
-                <li key={t.id} className="min-w-0">
-                  <ToppingGridCard
-                    name={t.name}
-                    price={t.price}
-                    imageSrc={t.imageUrl ?? undefined}
-                    selected={line.addOnIds.includes(t.id)}
-                    onToggle={() => toggleLineAddOn(t.id)}
-                  />
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-
-        {platterDrizzles.length > 0 ? (
-          <>
-            <SectionLabel>Drizzles</SectionLabel>
-            <p className="mt-1.5 font-sans text-[12px] leading-snug text-order-taupe">
-              Choose as many as you like.
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:gap-4">
-              {platterDrizzles.map((t) => (
-                <li key={t.id} className="min-w-0">
-                  <ToppingGridCard
-                    name={t.name}
-                    price={t.price}
-                    imageSrc={t.imageUrl ?? undefined}
-                    selected={line.addOnIds.includes(t.id)}
-                    onToggle={() => toggleLineAddOn(t.id)}
-                  />
-                </li>
-              ))}
+              {platterToppings.map((t) => {
+                const selected = line.addOnIds.includes(t.id);
+                return (
+                  <li key={t.id} className="min-w-0">
+                    <ToppingGridCard
+                      name={t.name}
+                      price={t.price}
+                      imageSrc={t.imageUrl ?? undefined}
+                      selected={selected}
+                      disabled={!selected && toppingsAtMax}
+                      onToggle={() =>
+                        toggleLineAddOnCapped(t.id, PLATTER_MAX_TOPPINGS)
+                      }
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </>
         ) : null}
 
         {!hasOptions ? (
           <p className="rounded-[1.25rem] border border-dashed border-order-line/70 bg-order-card/60 px-4 py-8 text-center font-sans text-sm leading-relaxed text-order-muted">
-            Platter toppings and drizzles for {stack.name} aren&apos;t listed
-            yet—you can still continue. In Admin → Menu, add them under{" "}
+            Platter toppings for {stack.name} aren&apos;t listed yet—you can
+            still continue. In Admin → Menu, add them under{" "}
             <span className="font-semibold text-order-brownInk">
               Platter topping
-            </span>{" "}
-            or{" "}
-            <span className="font-semibold text-order-brownInk">
-              Platter drizzle
             </span>{" "}
             and choose this platter.
           </p>

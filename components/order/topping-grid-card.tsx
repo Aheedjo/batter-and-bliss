@@ -11,6 +11,7 @@ type Props = {
   imageSrc?: string;
   selected: boolean;
   onToggle: () => void;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -20,6 +21,7 @@ export function ToppingGridCard({
   imageSrc,
   selected,
   onToggle,
+  disabled = false,
   className = "",
 }: Props) {
   const src = imageSrc ?? toppingImageUrl(name);
@@ -30,7 +32,8 @@ export function ToppingGridCard({
     <button
       type="button"
       onClick={onToggle}
-      className={`relative flex w-full flex-col items-center rounded-[1.25rem] p-2.5 pb-2 text-center shadow-card ring-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-order-brown/30 ${selected ? "bg-order-beigeActive ring-order-brown/[0.14] shadow-lift" : "bg-order-card ring-black/[0.06]"} ${className}`}
+      disabled={disabled}
+      className={`relative flex w-full flex-col items-center rounded-[1.25rem] p-2.5 pb-2 text-center shadow-card ring-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-order-brown/30 ${selected ? "bg-order-beigeActive ring-order-brown/[0.14] shadow-lift" : "bg-order-card ring-black/[0.06]"} ${disabled && !selected ? "opacity-40" : ""} ${className}`}
     >
       {selected ? (
         <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-order-brownBtn text-white shadow">

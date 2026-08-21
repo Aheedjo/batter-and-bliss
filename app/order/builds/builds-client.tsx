@@ -60,7 +60,7 @@ export function BuildsClient({ catalog, stacks }: Props) {
         <SectionHeading
           eyebrow="Review"
           title="Your pancake orders"
-          description="Each pancake stack has glazing (one), toppings, and syrups. Platters use platter toppings and drizzles only. Add another or continue to drinks."
+          description="Each pancake stack has glazing (one), toppings, and syrups. Platters include up to 2 platter toppings. Add another or continue to drinks."
           className="mb-8"
         />
 
