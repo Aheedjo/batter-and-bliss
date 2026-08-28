@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { AdminOrderListItem } from "@/lib/admin/admin-order-types";
 import { fetchOrderHistoryPage } from "@/app/admin/history/actions";
-import { CompletedOrderCard } from "@/components/admin/completed-order-card";
+import { OrderHistoryRow } from "@/components/admin/order-history-row";
 import type { OrderHistoryQuery, OrderHistoryStatusFilter } from "@/lib/data/orders-admin";
 
 const STATUS_TABS: { value: OrderHistoryStatusFilter; label: string }[] = [
@@ -176,9 +176,9 @@ export function OrderHistoryClient({
           No orders match{hasFilters ? " these filters" : ""}.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {orders.map((order) => (
-            <CompletedOrderCard
+            <OrderHistoryRow
               key={order.id}
               order={order}
               renderedAtMs={renderedAtMs}
