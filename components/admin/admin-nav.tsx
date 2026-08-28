@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Croissant, LayoutDashboard } from "lucide-react";
+import { ClipboardList, Croissant, History, LayoutDashboard } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +13,7 @@ const links: {
 }[] = [
   { href: "/admin", label: "Overview", match: "exact", Icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", match: "prefix", Icon: ClipboardList },
+  { href: "/admin/history", label: "History", match: "prefix", Icon: History },
   { href: "/admin/menu", label: "Menu", match: "prefix", Icon: Croissant },
 ];
 
